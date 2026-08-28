@@ -4905,7 +4905,6 @@ dependencies = [
  "tokio",
  "tower-http",
  "uuid",
- "window-vibrancy",
 ]
 
 [[package]]

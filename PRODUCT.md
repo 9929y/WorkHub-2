@@ -45,15 +45,16 @@ not an app.
   paint is a working HUD.
 - **Large-area purple / violet gradients.** The saturated AI-product default. Banned
   outright.
-- **Over-rounding.** Nothing rounder than 12px. 20px+ radii read as a consumer widget,
-  not an instrument.
+- **Over-rounding**, with one deliberate exception: the island is a full pill and the
+  expanded panel is 22px, because that is what a Dynamic Island is. Everything *inside*
+  the panel still tops out at 8px.
 - **Notification-centre theatre.** No toasts that slide and auto-vanish, no badge
   animations celebrating themselves. Alerts are sticky and quiet.
 - **Dashboard-metric templates.** No big-number-plus-tiny-label hero stat blocks. The
   numbers here are small because they are read at a glance, not presented.
-- **Decorative translucency.** Frosted glass is kept because the window genuinely
-  floats over the desktop, which is a functional reason. It is never applied to inner
-  elements for looks.
+- **Prose in a peripheral HUD.** The collapsed island carries zero words. A platform
+  is a mark, not a name; a finished task is a filled progress bar, not a sentence.
+  Words are reserved for the two states that need a human.
 - **Containers as decoration.** No cards, no wells, no card-in-card. Grouping is done
   with spacing and a single hairline. A border must earn its pixel.
 

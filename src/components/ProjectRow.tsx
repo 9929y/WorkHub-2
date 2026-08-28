@@ -1,41 +1,75 @@
-/** One project: status, name, the tools working on it, and its latest line.
- *  Alerts that still need a decision hang directly underneath.
+/** One category: its name, how far along it is, which platforms are on it, and
+ *  only the items that need you.
  *
- *  Replaces the old ProjectCard: no card, no collapse toggle, no timeline,
- *  no notes. Separation is spacing and a single hairline, not a container. */
+ *  A project with nothing blocked or waiting shows no prose whatsoever: just a
+ *  name, a progress bar and a row of marks. */
 
+import { actions } from "../lib/store";
 import { ago } from "../lib/rollup";
 import type { ProjectRollup } from "../lib/rollup";
-import { Alert } from "./Alert";
-import { SourceBadge } from "./SourceBadge";
+import { Close } from "./Icons";
+import { PlatformIcon } from "./PlatformIcon";
 import { StatusDot } from "./StatusDot";
 
 export function ProjectRow({ rollup }: { rollup: ProjectRollup }) {
-  const { project, status, latest, unread, stickyAlerts, badges } = rollup;
+  const { project, platforms, needsYou, progress } = rollup;
+  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
   return (
     <section className="project">
       <h2 className="project-head">
-        <StatusDot status={status} size={11} />
         <span className="project-name truncate">{project.name}</span>
-        {unread > 0 ? <span className="unread-pill tnum">{unread}</span> : null}
+        <span
+          className="progress"
+          role="img"
+          aria-label={`${progress.done} of ${progress.total} platforms finished`}
+          title={`${progress.done}/${progress.total} finished`}
+        >
+          <span className="progress-fill" style={{ width: `${pct}%` }} />
+        </span>
+        <span className="progress-num tnum">
+          {progress.done}/{progress.total}
+        </span>
       </h2>
 
-      <div className="project-badges">
-        {badges.map((b) => (
-          <SourceBadge key={b.sourceApp} sourceApp={b.sourceApp} status={b.status} />
+      {/* Click a mark to land in that tool. */}
+      <div className="platforms">
+        {platforms.map((p) => (
+          <button
+            key={p.sourceApp}
+            className={`platform mark-${p.status}`}
+            onClick={() => void actions.open(p.sourceApp, p.latest?.url)}
+            aria-label={`Open ${p.sourceApp} (${p.status})`}
+            title={`Open ${p.sourceApp} — ${p.status}`}
+          >
+            <PlatformIcon sourceApp={p.sourceApp} size={17} />
+          </button>
         ))}
       </div>
 
-      {latest ? (
-        <p className="project-latest">
-          <span className="truncate">{latest.summary || latest.taskName}</span>
-          <span className="latest-time tnum">{ago(latest.timestamp)}</span>
-        </p>
-      ) : null}
-
-      {stickyAlerts.map((a) => (
-        <Alert key={a.id} event={a} />
+      {needsYou.map((n) => (
+        <div key={n.task.id} className="need">
+          <StatusDot status={n.task.status} size={9} />
+          <button
+            className="need-main"
+            onClick={() => void actions.open(n.task.sourceApp, n.event?.url)}
+            title={n.event?.summary || n.task.name}
+          >
+            <span className="need-task truncate">{n.task.name}</span>
+            <span className="need-reason">{n.reason}</span>
+          </button>
+          <span className="need-time tnum">{ago(n.task.updatedAt)}</span>
+          {n.event ? (
+            <button
+              className="btn icon quiet"
+              onClick={() => void actions.dismiss(n.event!.id)}
+              aria-label={`Dismiss ${n.task.name}`}
+              title="Dismiss"
+            >
+              <Close size={11} />
+            </button>
+          ) : null}
+        </div>
       ))}
     </section>
   );

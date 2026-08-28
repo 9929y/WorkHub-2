@@ -1,18 +1,40 @@
 # Workhub
 
-An always-on-top frosted-glass HUD for macOS that aggregates the AI work you have
-running in parallel across **Cursor, Codex, Figma and Cloud** jobs.
+A Dynamic-Island-style HUD for macOS, centred under the notch, that aggregates the
+AI work you have running in parallel across **Cursor, Codex, Figma and Cloud** jobs.
 
-It is not a todo app. Nothing is maintained by hand: agents POST events to a local
-HTTP endpoint, Workhub groups them by project, rolls up status across tools, and
-holds notifications until you explicitly dismiss them.
+It is not a todo app, and it is not a notification log. Collapsed, it carries **no
+prose at all**: one mark per platform, tinted by what that platform needs, plus a
+count. Click and it springs open into the only thing worth reading — what is waiting
+on *you*.
+
+### The one rule
+
+Status is about who has the ball:
+
+| status | who has the ball | shown as |
+|---|---|---|
+| `running` | the machine | a mark. Never words. |
+| `done` | nobody | fills the progress bar. Never words. |
+| `blocked` | **you** | a line: needs a decision |
+| `waiting` | **you** | a line: waiting on you |
+
+Only the bottom two ever produce text. If every finished task demanded a click, this
+would be a todo list again.
 
 ```
-┌─ collapsed (300×64) ──────────┐
-│ ⠿  ✕ 1 blocked  ● 2 running 3 ⌄│
-│    ✓ Brainstorm IA          6m │
-└────────────────────────────────┘
-      click → panel (360×420)
+        ▁▁▁▁▁▁▁▁         ← the notch
+ ╭────────────────────────╮
+ │  ➤  >_  ◐  ☁       ②  │  ← the island: one mark per platform, no words
+ ╰────────────────────────╯
+            ↓ click
+ ╭────────────────────────╮
+ │ 2 need you          ⌃  │
+ │ AtlasNova Brand Kit 2/4│
+ │  ➤ >_ ◐ ☁              │
+ │  ✕ Debug tokens        │
+ │      Needs a decision  │
+ ╰────────────────────────╯
 ```
 
 ---
@@ -184,14 +206,19 @@ These are real MVP constraints, not TODOs I forgot:
 5. **The release build is unsigned.** On first open macOS Gatekeeper will object;
    right-click → Open, or sign it with your own certificate.
 6. **Light and dark follow the macOS system appearance**, with no control in the UI.
-   The native material is `Popover`, which AppKit renders to match, so the frost and
-   the CSS never disagree. There is no manual override. Type is 10–14 px by design:
-   this is a dense status console, not a document.
-7. **`pnpm build` occasionally fails on its first attempt** with
+   The *island* stays black in both, because it stands in for the notch and the notch
+   does not change colour; the expanded panel is themed. Type is 10–14 px by design.
+7. **The island sits below the menu bar, not over the notch.** Drawing above the menu
+   bar needs a status-level window and would cover the very thing the notch lives in.
+8. **No native vibrancy.** `NSVisualEffectView` fills the *window*, but the island
+   morphs an *element* inside it, so a frosted rectangle would flash around the pill on
+   every collapse. CSS owns the surface instead, at 93–95% opacity, with
+   `backdrop-filter` as pure enhancement.
+9. **`pnpm build` occasionally fails on its first attempt** with
    ``beforeBuildCommand `pnpm vite:build` failed``, when another pnpm or cargo
    process has just finished. `pnpm vite:build` always succeeds on its own, and the
    retry produces an identical bundle. Just run it again.
-8. **pnpm blocks esbuild's install script** on this machine (build scripts are gated
+10. **pnpm blocks esbuild's install script** on this machine (build scripts are gated
    by default in pnpm 11). It does not matter: esbuild's native binary ships inside
    `@esbuild/darwin-arm64` and vite resolves it directly. `pnpm-workspace.yaml` sets
    `verifyDepsBeforeRun: false` so the pending approval does not abort `pnpm run`.
@@ -209,8 +236,8 @@ workhub/
 │   │   ├── rollup.ts         ALL derived values live here
 │   │   ├── store.ts          zustand + live event subscription
 │   │   └── api.ts            the only file that calls invoke()
-│   ├── components/           Widget, Panel, ProjectRow, Alert,
-│   │                         SourceBadge, StatusDot, Icons
+│   ├── components/           Island, Panel, ProjectRow,
+│   │                         PlatformIcon, StatusDot, Icons
 │   └── styles/
 │       ├── tokens.css        colour / space / radius / type — single source of truth
 │       ├── glass.css         layout + glass surface recipes

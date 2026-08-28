@@ -69,6 +69,13 @@ pub fn set_panel_expanded(
     state.store.save_ui(ui).map_err(|e| e.to_string())
 }
 
+/// Fit the expanded panel to its measured content height.
+#[tauri::command]
+pub fn set_panel_height(win: WebviewWindow, height: f64) -> CmdResult<()> {
+    window::set_panel_height(&win, height);
+    Ok(())
+}
+
 /// Persist the window position after the user drags the HUD.
 #[tauri::command]
 pub fn save_position(win: WebviewWindow, state: State<'_, AppState>) -> CmdResult<()> {
@@ -83,13 +90,19 @@ pub fn save_position(win: WebviewWindow, state: State<'_, AppState>) -> CmdResul
 pub fn reset_position(win: WebviewWindow, state: State<'_, AppState>) -> CmdResult<()> {
     let expanded = !state.store.snapshot().map_err(|e| e.to_string())?.ui.collapsed;
     let width = if expanded { window::EXPANDED.0 } else { window::COLLAPSED.0 };
-    window::place_top_right(&win, width);
+    window::place_top_centre(&win, width);
     let mut ui = state.store.snapshot().map_err(|e| e.to_string())?.ui;
     ui.position = None;
     state.store.save_ui(ui).map_err(|e| e.to_string())
 }
 
 /// Exposed so the UI can show the port it is actually listening on.
+/// Jump from a status line into the tool that reported it.
+#[tauri::command]
+pub fn open_target(app: AppHandle, source_app: String, url: Option<String>) -> CmdResult<()> {
+    crate::launch::open(&app, &source_app, url.as_deref())
+}
+
 #[tauri::command]
 pub fn server_info() -> CmdResult<UiServerInfo> {
     Ok(UiServerInfo {

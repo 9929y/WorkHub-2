@@ -16,8 +16,16 @@ export const markAllRead = (projectId?: string) =>
 
 export const dismiss = (eventId: string) => invoke<void>("dismiss", { eventId });
 
+/** Open the exact task if the event carried a url, else the platform itself. */
+export const openTarget = (sourceApp: string, url?: string | null) =>
+  invoke<void>("open_target", { sourceApp, url: url ?? null });
+
 export const setPanelExpanded = (expanded: boolean) =>
   invoke<void>("set_panel_expanded", { expanded });
+
+/** Fit the native window to the panel's measured content height. */
+export const setPanelHeight = (height: number) =>
+  invoke<void>("set_panel_height", { height });
 
 export const savePosition = () => invoke<void>("save_position");
 export const resetPosition = () => invoke<void>("reset_position");

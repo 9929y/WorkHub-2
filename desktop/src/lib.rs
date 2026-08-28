@@ -2,6 +2,7 @@
 //! across Cursor, Codex, Figma and Cloud jobs.
 
 mod commands;
+mod launch;
 mod model;
 mod server;
 mod store;
@@ -29,8 +30,10 @@ pub fn run() {
             commands::mark_all_read,
             commands::dismiss,
             commands::set_panel_expanded,
+            commands::set_panel_height,
             commands::save_position,
             commands::reset_position,
+            commands::open_target,
             commands::server_info,
         ])
         .setup(|app| {
@@ -61,24 +64,12 @@ pub fn run() {
 }
 
 fn setup_window(win: &WebviewWindow, ui: &model::UiState) {
-    // Native frosted glass. CSS backdrop-filter alone over a transparent macOS
-    // window is unreliable, so the material comes from NSVisualEffectView and
-    // the CSS only composites tint and hairlines on top.
-    #[cfg(target_os = "macos")]
-    {
-        use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial, NSVisualEffectState};
-        // `Popover`, unlike `HudWindow`, is a semantic material: AppKit renders it
-        // light or dark to match the system appearance, so light mode needs no
-        // theme plumbing on the native side at all.
-        if let Err(e) = apply_vibrancy(
-            win,
-            NSVisualEffectMaterial::Popover,
-            Some(NSVisualEffectState::Active), // stay frosted even when unfocused
-            Some(12.0),
-        ) {
-            eprintln!("[workhub] vibrancy unavailable, falling back to CSS glass: {e}");
-        }
-    }
+    // No native vibrancy here, deliberately.
+    //
+    // NSVisualEffectView fills the *window*, but the island morphs an *element*
+    // inside it, so a frosted rectangle would flash around the pill for the
+    // duration of every collapse. A Dynamic Island is opaque anyway, so CSS owns
+    // the whole surface and the blur follows the shape exactly.
 
     let expanded = !ui.collapsed;
     let (w, h) = if expanded { window::EXPANDED } else { window::COLLAPSED };
@@ -95,7 +86,7 @@ fn setup_window(win: &WebviewWindow, ui: &model::UiState) {
 /// Dock icon, so without this menu there is no exit.
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     let toggle = MenuItem::with_id(app, "toggle", "Show / Hide HUD", true, None::<&str>)?;
-    let reset = MenuItem::with_id(app, "reset", "Reset Position", true, None::<&str>)?;
+    let reset = MenuItem::with_id(app, "reset", "Recentre Island", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     let quit = MenuItem::with_id(app, "quit", "Quit Workhub", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&toggle, &reset, &sep, &quit])?;
@@ -126,7 +117,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                         .map(|s| s.ui.collapsed)
                         .unwrap_or(true);
                     let width = if collapsed { window::COLLAPSED.0 } else { window::EXPANDED.0 };
-                    window::place_top_right(&win, width);
+                    window::place_top_centre(&win, width);
                 }
                 "quit" => app.exit(0),
                 _ => {}

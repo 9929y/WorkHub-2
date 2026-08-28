@@ -31,14 +31,69 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* The only surface in the app. Everything else is text on top of it. */
+/* The morphing element. There is exactly one, and it is the whole UI.
+ *
+ * Width/height are animated here, which is normally the wrong thing to animate.
+ * It is correct in this one case: the element has no siblings and no layout
+ * around it, so there is nothing to reflow, and a transform-based fake would
+ * distort the content instead of reflowing it. */
+.morph {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  overflow: hidden;
+  transform: translateX(-50%);
+  will-change: width, height;
+  transition:
+    width var(--morph) var(--spring),
+    height var(--morph) var(--spring),
+    border-radius var(--morph) var(--spring),
+    background-color var(--morph) var(--ease);
+}
+
+/* Collapsed: an opaque black pill standing in for the notch. Not themed, not
+   glass: the notch is black in light mode too. */
+.morph.is-island {
+  width: 224px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  background: var(--island-bg);
+}
+
+/* Expanded: a themed, translucent panel. */
+.morph.is-panel {
+  width: 360px;
+  /* height is set inline from the measured content; see App.tsx */
+  border-radius: 22px;
+  background: var(--glass-base);
+  box-shadow: inset 0 0 0 1px var(--stroke);
+  /* Progressive enhancement only. The surface is 93-95% opaque, so if the
+     compositor declines to blur, nothing about legibility changes. */
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+/* Content cross-fades slightly behind the size change, so the shape leads and
+   the words follow. Without this the panel text appears in a pill-sized box. */
+.morph > * {
+  animation: contents var(--morph) var(--ease) both;
+}
+@keyframes contents {
+  from {
+    opacity: 0;
+  }
+  60% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .shell {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--glass-base);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-window);
   overflow: hidden;
 }
 

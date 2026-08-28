@@ -2,15 +2,13 @@
 
 /* ===== Status ========================================================== */
 /* Shape first, hue second, so status survives greyscale and the red/green
-   colour-vision pair. Shapes are defined in StatusDot.tsx. */
+   colour-vision pair. Shapes live in StatusDot.tsx. */
 .glyph {
   flex: none;
   display: block;
 }
 .glyph-running {
   color: var(--running);
-  /* Running is the only genuinely live state, so it is the only thing that
-     moves. Opacity only: no layout, no repaint of the glass beneath. */
   animation: pulse 2s var(--ease) infinite;
 }
 .glyph-done {
@@ -33,112 +31,119 @@
   }
 }
 
-/* Source app + that app's current status. Unknown apps render dashed rather
-   than being rejected, so a new adapter needs no frontend change. */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--t-micro);
-  font-weight: 560;
-  color: var(--text-2);
-  white-space: nowrap;
-}
-.badge-unknown {
-  color: var(--text-3);
-}
-
-/* Unread is neutral, never a status colour: a red count beside a red `blocked`
-   glyph made a merely-running project read as blocked. */
-.unread-pill {
-  flex: none;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 4px;
-  border-radius: var(--r-pill);
-  background: var(--unread);
-  color: var(--unread-ink);
-  font-size: var(--t-micro);
-  font-weight: 700;
-  line-height: 15px;
-  text-align: center;
-  transition: opacity var(--dur-fast) var(--ease);
-}
-button.unread-pill:hover {
-  opacity: 0.78;
-}
-
-/* ===== Collapsed widget (300x64) ====================================== */
-.widget-line {
+/* ===== The island (collapsed, 224x36) ================================== */
+/* Opaque near-black, full pill: it reads as an extension of the notch, which is
+   why it does NOT follow the light/dark theme. */
+.island {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--s-2);
   width: 100%;
-  height: 32px;
-  padding: 0 var(--s-2) 0 var(--s-1);
-  text-align: left;
+  height: 100%;
+  padding: 0 var(--s-3) 0 var(--s-4);
+  background: var(--island-bg);
+  border-radius: var(--r-pill);
+  color: var(--island-ink);
+  transition: transform var(--dur-fast) var(--ease);
 }
-.widget-counts {
+.island:active {
+  transform: scale(0.97);
+}
+
+/* A thin drag strip down the left edge. The rest of the island stays clickable,
+   which a full-surface drag region would prevent. */
+.island-grip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14px;
+  border-radius: var(--r-pill) 0 0 var(--r-pill);
+  cursor: grab;
+}
+.island-grip:active {
+  cursor: grabbing;
+}
+
+.island-marks {
   display: flex;
   align-items: center;
   gap: var(--s-3);
   flex: 1;
   min-width: 0;
-  height: 100%;
 }
-.count {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--t-label);
-  color: var(--text-2);
+/* One mark per platform, tinted by what that platform needs. No words. */
+.mark {
+  display: block;
+  flex: none;
 }
-.count .tnum {
-  color: var(--text-1);
-  font-weight: 640;
+.mark-running {
+  color: var(--running);
+  animation: pulse 2s var(--ease) infinite;
 }
-.count-idle,
-.count-alert {
-  color: var(--text-3);
+.mark-done {
+  color: var(--done);
 }
-.count-alert {
+.mark-blocked {
   color: var(--blocked);
 }
+.mark-waiting {
+  color: var(--waiting);
+}
 
-.widget-last {
-  gap: 6px;
-  padding-left: 21px; /* aligns with the counts above, past the grip */
-  border-top: 1px solid var(--stroke);
+.island-idle,
+.island-dead {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--island-ink-2);
 }
-.last-name {
-  font-size: var(--t-body);
-  font-weight: 560;
-  color: var(--text-1);
+.island-dead {
+  background: var(--blocked);
 }
-.last-time {
+
+/* The only number on the island. Neutral, never a status colour. */
+.island-count {
   flex: none;
-  margin-left: auto;
-  font-size: var(--t-micro);
-  color: var(--text-3);
-}
-.last-empty {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--island-ink);
+  color: var(--island-bg);
   font-size: var(--t-label);
-  color: var(--text-3);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }
 
-/* ===== Expanded panel (360x470) ======================================= */
+/* ===== The panel (expanded) ============================================ */
 .panel-head {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--s-1);
+  gap: var(--s-2);
   flex: none;
-  height: 30px;
-  padding: 0 var(--s-2) 0 var(--s-1);
+  height: 34px;
+  padding: 0 var(--s-2) 0 var(--s-3);
   border-bottom: 1px solid var(--stroke);
 }
+.panel-grip {
+  position: absolute;
+  inset: 0 34px 0 0;
+  cursor: grab;
+}
+.panel-grip:active {
+  cursor: grabbing;
+}
 .panel-stat {
+  flex: 1;
   font-size: var(--t-label);
   color: var(--text-2);
+  pointer-events: none;
+}
+.strong {
+  font-weight: 700;
+  color: var(--text-1);
 }
 .panel-scroll {
   padding: var(--s-1) 0;
@@ -152,7 +157,6 @@ button.unread-pill:hover {
   color: var(--blocked);
   border-bottom: 1px solid var(--stroke);
 }
-
 .empty {
   margin: var(--s-4) var(--s-3);
   font-size: var(--t-label);
@@ -167,8 +171,7 @@ button.unread-pill:hover {
   user-select: text;
 }
 
-/* ===== Project ======================================================== */
-/* Separated by spacing and one hairline. No card, no well, no nesting. */
+/* ===== Category ======================================================== */
 .project {
   padding: var(--s-3);
 }
@@ -179,93 +182,95 @@ button.unread-pill:hover {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  margin: 0 0 5px;
+  margin: 0 0 var(--s-2);
   font-size: var(--t-title);
   font-weight: 620;
   letter-spacing: -0.01em;
 }
 .project-name {
+  flex: 1;
   color: var(--text-1);
 }
-.project-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2) var(--s-3);
-  margin-bottom: 5px;
-  padding-left: 19px;
-}
-.project-latest {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-2);
-  margin: 0;
-  padding-left: 19px;
-  font-size: var(--t-label);
-  color: var(--text-2);
-}
-.latest-time {
+
+/* Stage: how many of this category's platforms have finished. */
+.progress {
   flex: none;
-  margin-left: auto;
+  width: 44px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--stroke-strong);
+  overflow: hidden;
+}
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--done);
+  transition: width var(--morph) var(--ease);
+}
+.progress-num {
+  flex: none;
   font-size: var(--t-micro);
+  font-weight: 500;
   color: var(--text-3);
 }
 
-/* ===== Alerts ========================================================= */
-/* Sticky: only Dismiss removes one. Unread shows in full because it needs a
-   decision; read collapses to a line but stays until dismissed. */
-.alert {
+/* Platform marks: click one to land in that tool. */
+.platforms {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.platform {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-chip);
+  transition: background var(--dur-fast) var(--ease);
+}
+.platform:hover {
+  background: var(--glass-hover);
+}
+.platform:active {
+  background: var(--glass-active);
+}
+
+/* ===== Needs you ======================================================= */
+/* The only rows that carry words. Everything else is a mark. */
+.need {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   margin-top: var(--s-2);
-  margin-left: 19px;
-  padding: var(--s-2);
+  padding: 3px 3px 3px var(--s-2);
   border-radius: var(--r-chip);
   background: var(--glass-hover);
 }
-.alert-read {
+.need-main {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px var(--s-1) 3px var(--s-2);
-  background: none;
-  color: var(--text-3);
+  align-items: baseline;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
-.alert-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 3px;
-}
-.alert-name {
+.need-task {
   font-size: var(--t-label);
-  font-weight: 620;
+  font-weight: 600;
   color: var(--text-1);
 }
-.alert-read .alert-name {
-  font-weight: 400;
+.need-main:hover .need-task {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.need-reason {
+  flex: none;
+  font-size: var(--t-micro);
   color: var(--text-2);
 }
-.alert-app {
+.need-time {
   flex: none;
   font-size: var(--t-micro);
   color: var(--text-3);
-}
-.alert-time {
-  flex: none;
-  margin-left: auto;
-  font-size: var(--t-micro);
-  color: var(--text-3);
-}
-.alert-summary {
-  margin: 0 0 6px;
-  font-size: var(--t-label);
-  line-height: 1.45;
-  color: var(--text-2);
-  /* Selectable: summaries carry the detail worth copying. */
-  user-select: text;
-  cursor: text;
-}
-.alert-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin: 0;
 }

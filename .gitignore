@@ -1,0 +1,6 @@
+node_modules
+dist
+desktop/target
+desktop/gen
+.DS_Store
+*.log

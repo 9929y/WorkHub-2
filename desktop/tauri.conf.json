@@ -16,10 +16,10 @@
       {
         "label": "hud",
         "title": "Workhub",
-        "width": 320,
-        "height": 96,
-        "minWidth": 300,
-        "minHeight": 92,
+        "width": 300,
+        "height": 64,
+        "minWidth": 280,
+        "minHeight": 60,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
@@ -40,7 +40,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": [
+      "app",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

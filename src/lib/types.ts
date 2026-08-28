@@ -41,15 +41,6 @@ export interface Event {
   dismissed: boolean;
 }
 
-export interface Note {
-  id: string;
-  projectId: string;
-  sourceApp: SourceApp | null;
-  text: string;
-  timestamp: string;
-  pinned: boolean;
-}
-
 export interface UiState {
   position: [number, number] | null;
   collapsed: boolean;
@@ -59,7 +50,6 @@ export interface HubState {
   projects: Project[];
   tasks: Task[];
   events: Event[];
-  notes: Note[];
   ui: UiState;
 }
 

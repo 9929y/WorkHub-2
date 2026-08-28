@@ -86,16 +86,6 @@ impl Seeder {
         });
     }
 
-    fn note(&mut self, project_id: &str, source_app: Option<&str>, text: &str, age_min: i64, pinned: bool) {
-        self.state.notes.push(Note {
-            id: new_id(),
-            project_id: project_id.to_string(),
-            source_app: source_app.map(str::to_string),
-            text: text.to_string(),
-            timestamp: Utc::now() - Duration::minutes(age_min),
-            pinned,
-        });
-    }
 }
 
 pub fn demo_state() -> HubState {
@@ -110,19 +100,14 @@ pub fn demo_state() -> HubState {
     s.event(&a, "Figma", "Design review", Waiting, "Waiting on Yanice to sign off on the type scale.", Normal, 176, true);
     s.event(&a, "Codex", "Implementation", Done, "Finished layout implementation and tests passed.", Normal, 54, true);
     s.event(&a, "Cursor", "Debug token conflicts", Running, "Reproducing the duplicate --space-4 definition.", Normal, 33, true);
-    // Unread sticky #1 — blocked and high priority, needs a decision.
+    // Unread sticky #1: blocked and high priority, needs a decision.
     s.event(&a, "Cursor", "Debug token conflicts", Blocked, "Two sources define --space-4 differently. Need a call on which wins before I can continue.", High, 11, false);
-
-    s.note(&a, Some("Figma"), "Type scale review: 13px body is too tight for the dense tables. Try 14px.", 150, true);
-    s.note(&a, None, "Decision needed: does design_system/ or the product repo own spacing tokens?", 26, false);
 
     // ---- Project B: a long-running cloud job plus finished ideation ----
     let b = s.project("Portfolio Rewrite", 190);
     s.event(&b, "Cloud", "Build & deploy", Running, "Astro build running on the yyp branch, step 4 of 7.", Normal, 21, true);
-    // Unread sticky #2 — a completed handoff Yanice has not looked at yet.
+    // Unread sticky #2: a completed handoff Yanice has not looked at yet.
     s.event(&b, "Codex", "Brainstorm IA", Done, "Three navigation structures drafted; case-study-first is the recommendation.", Normal, 6, false);
-
-    s.note(&b, Some("Codex"), "Keep the case study index flat: no category nesting until there are 10+ entries.", 60, true);
 
     s.state.events.sort_by(|x, y| x.timestamp.cmp(&y.timestamp));
     s.state

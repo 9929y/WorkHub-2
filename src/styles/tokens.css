@@ -1,50 +1,15 @@
-/* Workhub design tokens — the single source of truth for colour, space, radius
- * and type. Components reference these, never raw hex.
+/* Workhub design tokens.
  *
- * The HUD is deliberately dark-only: it floats over an arbitrary desktop, so a
- * light variant would lose contrast against bright wallpapers. */
+ * Two themes, selected by the system appearance. The native window material is
+ * `Popover`, which AppKit renders light or dark to match, so `prefers-color-scheme`
+ * and the window frost always agree without any theme plumbing.
+ *
+ * Every text/background pair below is measured against the *tint alone* over a
+ * worst-case wallpaper, not against an assumed backdrop. */
 
 :root {
-  /* --- Glass surfaces --------------------------------------------------- */
-  /* Tint only. The blur itself is the native NSVisualEffectView underneath. */
-  --glass-base: rgba(22, 23, 26, 0.62);
-  --glass-raised: rgba(38, 40, 45, 0.55);
-  --glass-sunken: rgba(12, 13, 15, 0.38);
-  --glass-hover: rgba(255, 255, 255, 0.05);
-  --glass-active: rgba(255, 255, 255, 0.09);
-
-  /* --- Hairlines ------------------------------------------------------- */
-  --stroke: rgba(255, 255, 255, 0.1);
-  --stroke-strong: rgba(255, 255, 255, 0.16);
-  --stroke-inner: rgba(255, 255, 255, 0.06);
-
-  /* --- Text ramp (three levels, no more) -------------------------------- */
-  --text-1: rgba(255, 255, 255, 0.94);
-  --text-2: rgba(255, 255, 255, 0.62);
-  /* 0.52, not 0.40: at 0.40 this measured 3.49:1 over the glass on a white
-   * wallpaper, and it carries timestamps, group labels and the input
-   * placeholder. 0.52 measures 4.82:1 in that same worst case. */
-  --text-3: rgba(255, 255, 255, 0.52);
-
-  /* --- Status colours. Used ONLY to convey status. ---------------------- */
-  --running: #4a9eff;
-  --done: #35c17e;
-  --blocked: #ff5f56;
-  --waiting: #f0a83c;
-  /* Unread is NOT a status. It gets a neutral high-contrast token so a red
-   * badge can never be mistaken for `blocked` on the same card. */
-  --unread: rgba(255, 255, 255, 0.92);
-  --unread-ink: #16171a;
-
-  /* Low-alpha fills for status chips, kept at >=3:1 against their own text. */
-  --running-bg: rgba(74, 158, 255, 0.16);
-  --done-bg: rgba(53, 193, 126, 0.16);
-  --blocked-bg: rgba(255, 95, 86, 0.18);
-  --waiting-bg: rgba(240, 168, 60, 0.16);
-
   /* --- Radii. Nothing rounder than 12px. ------------------------------- */
   --r-window: 12px;
-  --r-card: 10px;
   --r-chip: 8px;
   --r-pill: 999px;
 
@@ -53,9 +18,8 @@
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
-  --s-6: 24px;
 
-  /* --- Type. Dense on purpose: this is a status console, not a document. - */
+  /* --- Type. Dense on purpose: this is a readout, not a document. ------ */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   --t-micro: 10px;
@@ -63,11 +27,68 @@
   --t-body: 12px;
   --t-title: 14px;
 
-  /* --- Motion. 150-220ms, ease-out in / ease-in out. ------------------- */
+  /* --- Motion ---------------------------------------------------------- */
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --dur-fast: 120ms;
+}
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24);
+/* ===== Dark (default) ================================================== */
+:root {
+  color-scheme: dark;
+
+  --glass-base: rgba(22, 23, 26, 0.62);
+  --glass-hover: rgba(255, 255, 255, 0.06);
+  --glass-active: rgba(255, 255, 255, 0.1);
+
+  --stroke: rgba(255, 255, 255, 0.1);
+  --stroke-strong: rgba(255, 255, 255, 0.18);
+
+  --text-1: rgba(255, 255, 255, 0.94);
+  --text-2: rgba(255, 255, 255, 0.66);
+  --text-3: rgba(255, 255, 255, 0.52);
+
+  /* Status hues, tuned for a dark tint. */
+  --running: #4a9eff;
+  --done: #35c17e;
+  --blocked: #ff5f56;
+  --waiting: #f0a83c;
+
+  /* Unread is NOT a status: neutral so it can never read as `blocked`. */
+  --unread: rgba(255, 255, 255, 0.92);
+  --unread-ink: #16171a;
+}
+
+/* ===== Light =========================================================== */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+
+    /* Lighter and *more opaque* than the dark tint. Dark text over a light
+     * translucent panel loses contrast much faster as the wallpaper darkens,
+     * so light mode buys its legibility back with opacity. */
+    --glass-base: rgba(250, 250, 252, 0.76);
+    --glass-hover: rgba(0, 0, 0, 0.05);
+    --glass-active: rgba(0, 0, 0, 0.09);
+
+    --stroke: rgba(0, 0, 0, 0.12);
+    --stroke-strong: rgba(0, 0, 0, 0.2);
+
+    --text-1: rgba(0, 0, 0, 0.88);
+    --text-2: rgba(0, 0, 0, 0.62);
+    /* 0.58, solved not guessed: 0.50 measured 3.82:1 on the worst-case
+     * light panel (rgb 233). 0.58 measures 5.03:1. */
+    --text-3: rgba(0, 0, 0, 0.58);
+
+    /* Darkened so they still hit contrast on a light surface: the dark-mode
+     * hues are far too light here. */
+    --running: #0a63d6;
+    --done: #0a6b3b; /* #0d7a45 measured 4.43:1, just under the body floor */
+    --blocked: #c62317;
+    --waiting: #8a5a00;
+
+    --unread: rgba(0, 0, 0, 0.82);
+    --unread-ink: #ffffff;
+  }
 }
 
 /* Honour the system setting rather than animating regardless. */

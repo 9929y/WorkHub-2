@@ -14,7 +14,6 @@ const EMPTY: HubState = {
   projects: [],
   tasks: [],
   events: [],
-  notes: [],
   ui: { position: null, collapsed: true },
 };
 
@@ -92,8 +91,4 @@ export const actions = {
   dismiss: (eventId: string) => api.dismiss(eventId),
   setRead: (eventId: string, read: boolean) => api.setRead(eventId, read),
   markAllRead: (projectId?: string) => api.markAllRead(projectId),
-  addNote: (projectId: string, text: string, sourceApp?: string | null) =>
-    api.addNote(projectId, text, sourceApp),
-  pinNote: (noteId: string, pinned: boolean) => api.setNotePinned(noteId, pinned),
-  deleteNote: (noteId: string) => api.deleteNote(noteId),
 };

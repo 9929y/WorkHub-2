@@ -100,17 +100,6 @@ pub struct Event {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Note {
-    pub id: String,
-    pub project_id: String,
-    pub source_app: Option<String>,
-    pub text: String,
-    pub timestamp: DateTime<Utc>,
-    pub pinned: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct UiState {
     /// Last logical window position, so the HUD reopens where it was left.
@@ -131,7 +120,6 @@ pub struct HubState {
     pub projects: Vec<Project>,
     pub tasks: Vec<Task>,
     pub events: Vec<Event>,
-    pub notes: Vec<Note>,
     pub ui: UiState,
 }
 

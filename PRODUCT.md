@@ -54,6 +54,8 @@ not an app.
 - **Decorative translucency.** Frosted glass is kept because the window genuinely
   floats over the desktop, which is a functional reason. It is never applied to inner
   elements for looks.
+- **Containers as decoration.** No cards, no wells, no card-in-card. Grouping is done
+  with spacing and a single hairline. A border must earn its pixel.
 
 ## Design Principles
 
@@ -66,9 +68,11 @@ not an app.
    to a red status chip is a bug, not a style.
 3. **Never colour-only.** Status must survive being printed in greyscale: shape and
    text carry it too. This is a four-colour system including the red/green pair.
-4. **Glanceable beats complete.** The collapsed widget answers one question in one
-   look. Anything that needs reading belongs in the panel. When in doubt, cut from the
-   widget, not from the panel.
+4. **Glanceable beats complete, everywhere.** The widget answers "does anything need
+   me?" in one look. The panel answers "what, and in which project?" Neither is a
+   place to be thorough. When in doubt, cut. Notes and the per-event timeline were
+   both cut for exactly this reason: they were record-keeping, and this is an
+   instrument, not a record.
 5. **Earned familiarity over invention.** Standard macOS behaviour every time there is
    a choice. Novelty in a peripheral always-on utility is a cost, not a feature.
 
@@ -84,5 +88,10 @@ not an app.
   alone.
 - Full keyboard operability with visible focus rings. Focus is never removed, only
   scoped to keyboard use.
-- Dark-only is a deliberate constraint, not an omission: the HUD floats over arbitrary
-  wallpaper and a light variant would lose contrast against bright desktops.
+- Light and dark both ship, following the macOS system appearance with no control in
+  the UI. The native window material is `Popover`, which AppKit renders light or dark
+  to match, so the frost and the CSS never disagree.
+- Light mode is not the dark palette inverted. It uses a **more opaque** tint (0.76 vs
+  0.62) because dark text over a light translucent panel loses contrast far faster as
+  the wallpaper darkens, and darker status hues, because the dark-mode hues fail on a
+  light surface. Both themes are measured against their own worst-case wallpaper.

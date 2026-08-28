@@ -3,7 +3,7 @@
 //! Each mutation emits `workhub://state` so every surface (HUD and any future
 //! window) converges on the same snapshot without polling.
 
-use crate::model::{HubState, Note};
+use crate::model::HubState;
 use crate::server::STATE_EVENT;
 use crate::{window, AppState};
 use tauri::{AppHandle, Emitter, State, WebviewWindow};
@@ -17,22 +17,6 @@ fn broadcast(app: &AppHandle) {
 #[tauri::command]
 pub fn get_state(state: State<'_, AppState>) -> CmdResult<HubState> {
     state.store.snapshot().map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn add_note(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    project_id: String,
-    source_app: Option<String>,
-    text: String,
-) -> CmdResult<Note> {
-    let note = state
-        .store
-        .add_note(&project_id, source_app, text)
-        .map_err(|e| e.to_string())?;
-    broadcast(&app);
-    Ok(note)
 }
 
 #[tauri::command]
@@ -64,28 +48,6 @@ pub fn mark_all_read(
 #[tauri::command]
 pub fn dismiss(app: AppHandle, state: State<'_, AppState>, event_id: String) -> CmdResult<()> {
     state.store.dismiss(&event_id).map_err(|e| e.to_string())?;
-    broadcast(&app);
-    Ok(())
-}
-
-#[tauri::command]
-pub fn set_note_pinned(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    note_id: String,
-    pinned: bool,
-) -> CmdResult<()> {
-    state
-        .store
-        .set_note_pinned(&note_id, pinned)
-        .map_err(|e| e.to_string())?;
-    broadcast(&app);
-    Ok(())
-}
-
-#[tauri::command]
-pub fn delete_note(app: AppHandle, state: State<'_, AppState>, note_id: String) -> CmdResult<()> {
-    state.store.delete_note(&note_id).map_err(|e| e.to_string())?;
     broadcast(&app);
     Ok(())
 }

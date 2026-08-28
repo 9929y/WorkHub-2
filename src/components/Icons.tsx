@@ -43,19 +43,6 @@ export const Check = ({ size = 14, className }: Props) => (
   </svg>
 );
 
-export const Pin = ({ size = 14, className }: Props) => (
-  <svg {...base(size)} className={className}>
-    <path d="M6 2h4l-.5 4.2 2 2.3H4.5l2-2.3L6 2Z" />
-    <path d="M8 8.5V14" />
-  </svg>
-);
-
-export const Plus = ({ size = 14, className }: Props) => (
-  <svg {...base(size)} className={className}>
-    <path d="M8 3.5v9M3.5 8h9" />
-  </svg>
-);
-
 export const Grip = ({ size = 14, className }: Props) => (
   <svg {...base(size)} className={className} strokeWidth={0} fill="currentColor">
     <circle cx="6" cy="4" r="1" />
@@ -75,9 +62,3 @@ export const Link = ({ size = 14, className }: Props) => (
   </svg>
 );
 
-export const Inbox = ({ size = 14, className }: Props) => (
-  <svg {...base(size)} className={className}>
-    <path d="M2 9.5h3l1 2h4l1-2h3" />
-    <path d="M3.5 3.5h9l1.5 6v3a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-3l1.5-6Z" />
-  </svg>
-);

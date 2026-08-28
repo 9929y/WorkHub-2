@@ -6,8 +6,8 @@
 
 use tauri::{LogicalPosition, LogicalSize, Monitor, WebviewWindow};
 
-pub const COLLAPSED: (f64, f64) = (320.0, 96.0);
-pub const EXPANDED: (f64, f64) = (420.0, 620.0);
+pub const COLLAPSED: (f64, f64) = (300.0, 64.0);
+pub const EXPANDED: (f64, f64) = (360.0, 420.0);
 
 /// Gap from the work-area edges.
 const MARGIN: f64 = 8.0;

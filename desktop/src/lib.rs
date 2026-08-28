@@ -25,12 +25,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::get_state,
-            commands::add_note,
             commands::set_read,
             commands::mark_all_read,
             commands::dismiss,
-            commands::set_note_pinned,
-            commands::delete_note,
             commands::set_panel_expanded,
             commands::save_position,
             commands::reset_position,
@@ -70,9 +67,12 @@ fn setup_window(win: &WebviewWindow, ui: &model::UiState) {
     #[cfg(target_os = "macos")]
     {
         use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial, NSVisualEffectState};
+        // `Popover`, unlike `HudWindow`, is a semantic material: AppKit renders it
+        // light or dark to match the system appearance, so light mode needs no
+        // theme plumbing on the native side at all.
         if let Err(e) = apply_vibrancy(
             win,
-            NSVisualEffectMaterial::HudWindow,
+            NSVisualEffectMaterial::Popover,
             Some(NSVisualEffectState::Active), // stay frosted even when unfocused
             Some(12.0),
         ) {

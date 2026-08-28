@@ -8,13 +8,11 @@ HTTP endpoint, Workhub groups them by project, rolls up status across tools, and
 holds notifications until you explicitly dismiss them.
 
 ```
-┌─ collapsed (320×96) ────────────────┐
-│ ⠿ Workhub               ▣ 2    ⌄   │
-│ ● Brainstorm IA          6m ago    │
-│   Portfolio Rewrite                │
-│ 2 active │ ● 2 running │ ● 1 blocked│
-└─────────────────────────────────────┘
-        click → status panel (420×620)
+┌─ collapsed (300×64) ──────────┐
+│ ⠿  ✕ 1 blocked  ● 2 running 3 ⌄│
+│    ✓ Brainstorm IA          6m │
+└────────────────────────────────┘
+      click → panel (360×420)
 ```
 
 ---
@@ -113,7 +111,6 @@ Project  { id, name, slug, createdAt, updatedAt }
 Task     { id, projectId, name, sourceApp, status, updatedAt }
 Event    { id, projectId, taskId, sourceApp, taskName, status,
            summary, priority, url, timestamp, read, dismissed }
-Note     { id, projectId, sourceApp, text, timestamp, pinned }
 ```
 
 **`Task` is the "thread" concept and it is what makes aggregation work.** A task is
@@ -136,7 +133,8 @@ nowhere else:
 
 - **unread** — `!read && !dismissed`
 - **sticky alert** — `!dismissed && (blocked || done || priority === high)`.
-  Sticky alerts **never auto-expire**; only pressing *Dismiss* removes one.
+  Sticky alerts **never auto-expire**; only pressing *Dismiss* removes one. An alert
+  you have read collapses to a single line but stays until dismissed.
 - **project status** — worst status among its tasks: `blocked > waiting > running > done`
 - **active projects** — projects with at least one `running` or `waiting` track
 
@@ -185,9 +183,10 @@ These are real MVP constraints, not TODOs I forgot:
    only way to quit**.
 5. **The release build is unsigned.** On first open macOS Gatekeeper will object;
    right-click → Open, or sign it with your own certificate.
-6. **Dark only.** The HUD floats over arbitrary wallpaper; a light variant would lose
-   contrast against bright desktops. Type is 10–13 px by design — this is a dense
-   status console, not a document.
+6. **Light and dark follow the macOS system appearance**, with no control in the UI.
+   The native material is `Popover`, which AppKit renders to match, so the frost and
+   the CSS never disagree. There is no manual override. Type is 10–14 px by design:
+   this is a dense status console, not a document.
 7. **`pnpm build` occasionally fails on its first attempt** with
    ``beforeBuildCommand `pnpm vite:build` failed``, when another pnpm or cargo
    process has just finished. `pnpm vite:build` always succeeds on its own, and the
@@ -210,8 +209,8 @@ workhub/
 │   │   ├── rollup.ts         ALL derived values live here
 │   │   ├── store.ts          zustand + live event subscription
 │   │   └── api.ts            the only file that calls invoke()
-│   ├── components/           Widget, Panel, ProjectCard, Timeline,
-│   │                         StickyAlerts, Notes, SourceBadge, StatusDot
+│   ├── components/           Widget, Panel, ProjectRow, Alert,
+│   │                         SourceBadge, StatusDot, Icons
 │   └── styles/
 │       ├── tokens.css        colour / space / radius / type — single source of truth
 │       ├── glass.css         layout + glass surface recipes
@@ -236,9 +235,9 @@ All colour, spacing, radius and type live in
 | | |
 |---|---|
 | Surfaces | `rgba(22,23,26,0.62)` base · `rgba(38,40,45,0.55)` raised — tint only, blur is native |
-| Text | three levels: 0.94 / 0.62 / 0.52 alpha |
+| Text | three levels per theme; every pair measured, see below |
 | Status | running `#4A9EFF` · done `#35C17E` · blocked `#FF5F56` · waiting `#F0A83C` |
-| Radii | 12 px window · 10 px card · 8 px chip |
+| Radii | 12 px window · 8 px chip. There are no cards. |
 | Motion | 120 ms, honours `prefers-reduced-motion` |
 
 **Status is carried by shape first, hue second.** The palette spans the red/green
@@ -254,10 +253,19 @@ pair, so hue alone would collapse under deuteranopia. Each status has its own gl
 The result stays readable in greyscale, and every glyph exposes a text label to
 assistive tech. All counters use tabular figures so numbers do not jitter.
 
-The `0.52` text alpha is measured, not chosen by eye: at `0.40` the label/timestamp
-ramp measured **3.49:1** against the glass over a white wallpaper, below the 4.5:1
-body-text floor. Raising the tint opacity barely moved it (3.49 → 3.59), so the fix
-is the text, not the glass. `0.52` measures **4.82:1** in that same worst case.
+Text alphas are solved, not chosen by eye. Each theme is measured against its own
+worst-case wallpaper (white behind dark mode, black behind light mode), because a
+translucent panel's background depends on what is behind it:
+
+| | dark | light |
+|---|---|---|
+| tint opacity | 0.62 | **0.76** |
+| secondary text | 0.66 → 6.2:1 | 0.62 → 5.8:1 |
+| tertiary text | 0.52 → 4.8:1 | 0.58 → 5.0:1 |
+
+Light mode is not the dark palette inverted: it needs a more opaque tint, because dark
+text over a light translucent panel loses contrast far faster as the wallpaper darkens,
+and darker status hues, because the dark-mode hues fail outright on a light surface.
 
 ---
 

@@ -174,34 +174,6 @@ impl Store for JsonStore {
         Ok(event)
     }
 
-    fn add_note(
-        &self,
-        project_id: &str,
-        source_app: Option<String>,
-        text: String,
-    ) -> Result<Note> {
-        let text = text.trim().to_string();
-        if text.is_empty() {
-            return Err(StoreError::Invalid("note text must not be empty".into()));
-        }
-        let mut state = self.lock();
-        if !state.projects.iter().any(|p| p.id == project_id) {
-            return Err(StoreError::NotFound(format!("project {project_id}")));
-        }
-        let note = Note {
-            id: new_id(),
-            project_id: project_id.to_string(),
-            source_app: source_app.map(|s| s.trim().to_string()).filter(|s| !s.is_empty()),
-            text,
-            timestamp: Utc::now(),
-            pinned: false,
-        };
-        state.notes.push(note.clone());
-        drop(state);
-        self.flush()?;
-        Ok(note)
-    }
-
     fn set_read(&self, event_id: &str, read: bool) -> Result<()> {
         let mut state = self.lock();
         let event = state
@@ -239,29 +211,6 @@ impl Store for JsonStore {
         // Dismissing implies acknowledgement, so it also clears unread.
         event.dismissed = true;
         event.read = true;
-        drop(state);
-        self.flush()
-    }
-
-    fn set_note_pinned(&self, note_id: &str, pinned: bool) -> Result<()> {
-        let mut state = self.lock();
-        let note = state
-            .notes
-            .iter_mut()
-            .find(|n| n.id == note_id)
-            .ok_or_else(|| StoreError::NotFound(format!("note {note_id}")))?;
-        note.pinned = pinned;
-        drop(state);
-        self.flush()
-    }
-
-    fn delete_note(&self, note_id: &str) -> Result<()> {
-        let mut state = self.lock();
-        let before = state.notes.len();
-        state.notes.retain(|n| n.id != note_id);
-        if state.notes.len() == before {
-            return Err(StoreError::NotFound(format!("note {note_id}")));
-        }
         drop(state);
         self.flush()
     }
@@ -370,33 +319,6 @@ mod tests {
         let unread: Vec<_> = snap.events.iter().filter(|e| !e.read).collect();
         assert_eq!(unread.len(), 1, "the other project keeps its unread event");
         assert_ne!(unread[0].project_id, a_id);
-    }
-
-    #[test]
-    fn notes_round_trip_and_pin() {
-        let s = empty_store("notes");
-        s.ingest_event(payload("P", "Codex", "T", "done")).unwrap();
-        let pid = s.snapshot().unwrap().projects[0].id.clone();
-
-        let note = s.add_note(&pid, Some("Figma".into()), "  check the type scale  ".into()).unwrap();
-        assert_eq!(note.text, "check the type scale", "text is trimmed");
-        assert!(!note.pinned);
-
-        s.set_note_pinned(&note.id, true).unwrap();
-        assert!(s.snapshot().unwrap().notes[0].pinned);
-
-        s.delete_note(&note.id).unwrap();
-        assert!(s.snapshot().unwrap().notes.is_empty());
-        assert!(s.delete_note(&note.id).is_err(), "deleting twice is an error, not a silent no-op");
-    }
-
-    #[test]
-    fn note_requires_an_existing_project_and_non_empty_text() {
-        let s = empty_store("notes-guard");
-        assert!(s.add_note("nope", None, "x".into()).is_err());
-        s.ingest_event(payload("P", "Codex", "T", "done")).unwrap();
-        let pid = s.snapshot().unwrap().projects[0].id.clone();
-        assert!(s.add_note(&pid, None, "   ".into()).is_err());
     }
 
     #[test]

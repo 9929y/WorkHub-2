@@ -1,4 +1,4 @@
-/* Base layout + glass surface recipes. */
+/* Base layout and the one glass surface. */
 
 *,
 *::before,
@@ -21,20 +21,18 @@ body {
   font-size: var(--t-body);
   color: var(--text-1);
   -webkit-font-smoothing: antialiased;
-  /* A HUD is not a document — text selection would only get in the way. */
   user-select: none;
   cursor: default;
 }
 
-/* Counters, timestamps and any aligned figure. Prevents width jitter as
- * numbers change, which on a live status readout is very visible. */
+/* Counters and timestamps. Stops width jitter as numbers change, which on a
+   live readout is very visible. */
 .tnum {
   font-variant-numeric: tabular-nums;
 }
 
-/* The window shell: tint + hairline over the native frost. */
+/* The only surface in the app. Everything else is text on top of it. */
 .shell {
-  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -44,30 +42,6 @@ body {
   overflow: hidden;
 }
 
-/* Top inner highlight — reads as a lit glass edge rather than a flat panel. */
-.shell::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.22) 20%,
-    rgba(255, 255, 255, 0.22) 80%,
-    transparent
-  );
-  pointer-events: none;
-}
-
-.card {
-  background: var(--glass-raised);
-  border: 1px solid var(--stroke-inner);
-  border-radius: var(--r-card);
-  box-shadow: var(--shadow-card);
-}
-
-/* Scroll region inside the panel. */
 .scroll {
   flex: 1;
   min-height: 0;
@@ -75,23 +49,18 @@ body {
   overscroll-behavior: contain;
 }
 .scroll::-webkit-scrollbar {
-  width: 8px;
+  width: 7px;
 }
 .scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--stroke-strong);
   border-radius: var(--r-pill);
   border: 2px solid transparent;
-  background-clip: content-box;
-}
-.scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
   background-clip: content-box;
 }
 .scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* --- Buttons ---------------------------------------------------------- */
 button {
   font: inherit;
   color: inherit;
@@ -101,55 +70,55 @@ button {
   cursor: pointer;
 }
 
-/* Focus rings stay visible — never removed, only scoped to keyboard use. */
+/* Focus rings stay visible, only scoped to keyboard use. */
 :focus-visible {
   outline: 2px solid var(--running);
   outline-offset: 1px;
   border-radius: var(--r-chip);
 }
 
+/* Icon-only affordances. The only "button" left with a hit area of its own. */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
-  height: 22px;
-  padding: 0 var(--s-2);
+  height: 20px;
+  padding: 0 6px;
   border-radius: var(--r-chip);
-  border: 1px solid var(--stroke);
   color: var(--text-2);
   font-size: var(--t-label);
-  /* colour/opacity only — never anything that shifts layout bounds */
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .btn:hover {
   background: var(--glass-hover);
   color: var(--text-1);
-  border-color: var(--stroke-strong);
 }
 .btn:active {
   background: var(--glass-active);
 }
 .btn.icon {
-  width: 22px;
+  width: 20px;
   padding: 0;
   justify-content: center;
 }
-.btn.quiet {
-  border-color: transparent;
+
+/* Text actions. Quieter than a button, which is all an alert needs. */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--t-label);
+  color: var(--text-2);
+  text-decoration: none;
+  border-radius: 3px;
+  transition: color var(--dur-fast) var(--ease);
 }
-.btn.danger:hover {
-  color: var(--blocked);
-  border-color: rgba(255, 95, 86, 0.4);
-  background: var(--blocked-bg);
+.link:hover {
+  color: var(--text-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-/* --- Utilities -------------------------------------------------------- */
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-}
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,33 +129,22 @@ button {
   flex: 1;
   min-width: 0;
 }
-.divider {
-  height: 1px;
-  background: var(--stroke-inner);
-}
-.label {
-  font-size: var(--t-label);
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
-/* The only draggable zone. Deliberately small: the rest of the widget must
- * stay clickable, and a full-surface drag region swallows clicks. */
+/* The only draggable zone. Deliberately small: a full-surface drag region
+   swallows the clicks that expand the panel. */
 .grip {
   flex: none;
-  width: 14px;
-  height: 22px;
-  border-radius: var(--r-chip);
+  width: 13px;
+  height: 20px;
   display: grid;
   place-items: center;
   cursor: grab;
   color: var(--text-3);
-  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  border-radius: var(--r-chip);
+  transition: color var(--dur-fast) var(--ease);
 }
 .grip:hover {
   color: var(--text-2);
-  background: var(--glass-hover);
 }
 .grip:active {
   cursor: grabbing;

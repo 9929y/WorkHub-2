@@ -25,7 +25,7 @@ export function ProjectCard({ rollup }: { rollup: ProjectRollup }) {
           onClick={() => setOpen(!open)}
           aria-expanded={open}
         >
-          <StatusDot status={status} size={8} />
+          <StatusDot status={status} size={11} />
           <h2 className="project-name truncate">{project.name}</h2>
           {unread > 0 ? <span className="project-unread tnum">{unread}</span> : null}
           <div className="spacer" />
@@ -70,12 +70,9 @@ export function ProjectCard({ rollup }: { rollup: ProjectRollup }) {
             </section>
           ) : null}
 
-          <section>
-            <header className="section-head">
-              <span className="label">Timeline</span>
-            </header>
-            <Timeline events={timeline} />
-          </section>
+          {/* No group label here: the connected rail already reads as a
+              timeline, and a third uppercase label per card was pure noise. */}
+          <Timeline events={timeline} />
 
           <Notes projectId={project.id} notes={notes} />
         </div>

@@ -94,7 +94,7 @@ function Metric({
   const muted = value === 0;
   return (
     <span className={`metric${muted ? " metric-muted" : ""}`}>
-      {status && !muted ? <StatusDot status={status} size={6} /> : null}
+      {status && !muted ? <StatusDot status={status} size={9} /> : null}
       <span className="metric-value tnum">{value}</span>
       <span className="metric-label">{label}</span>
     </span>

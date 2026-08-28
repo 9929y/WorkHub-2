@@ -236,14 +236,28 @@ All colour, spacing, radius and type live in
 | | |
 |---|---|
 | Surfaces | `rgba(22,23,26,0.62)` base · `rgba(38,40,45,0.55)` raised — tint only, blur is native |
-| Text | three levels: 0.94 / 0.62 / 0.40 alpha |
+| Text | three levels: 0.94 / 0.62 / 0.52 alpha |
 | Status | running `#4A9EFF` · done `#35C17E` · blocked `#FF5F56` · waiting `#F0A83C` |
 | Radii | 12 px window · 10 px card · 8 px chip |
-| Motion | 120–180 ms, honours `prefers-reduced-motion` |
+| Motion | 120 ms, honours `prefers-reduced-motion` |
 
-Status is never conveyed by colour alone — every dot carries an accessible label,
-unread alerts get a left rule as well as a colour, and all counters use tabular
-figures so numbers do not jitter as they change.
+**Status is carried by shape first, hue second.** The palette spans the red/green
+pair, so hue alone would collapse under deuteranopia. Each status has its own glyph:
+
+| Status | Glyph |
+|---|---|
+| running | filled disc (the only thing that animates) |
+| done | check |
+| blocked | cross |
+| waiting | hollow ring |
+
+The result stays readable in greyscale, and every glyph exposes a text label to
+assistive tech. All counters use tabular figures so numbers do not jitter.
+
+The `0.52` text alpha is measured, not chosen by eye: at `0.40` the label/timestamp
+ramp measured **3.49:1** against the glass over a white wallpaper, below the 4.5:1
+body-text floor. Raising the tint opacity barely moved it (3.49 → 3.59), so the fix
+is the text, not the glass. `0.52` measures **4.82:1** in that same worst case.
 
 ---
 

@@ -1,30 +1,28 @@
 /* Component styles. Colour, spacing and type come from tokens.css only. */
 
 /* ===== Status primitives ============================================== */
-.dot {
+/* Status is carried by SHAPE first (see StatusDot.tsx) and hue second, so it
+   survives greyscale and the red/green colour-vision pair. */
+.glyph {
   flex: none;
-  display: inline-block;
-  border-radius: var(--r-pill);
-  /* A faint ring lifts the dot off the glass at small sizes. */
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+  display: block;
 }
-.dot-running {
-  background: var(--running);
-}
-.dot-done {
-  background: var(--done);
-}
-.dot-blocked {
-  background: var(--blocked);
-}
-.dot-waiting {
-  background: var(--waiting);
-}
-
-/* Running is the only live state, so it is the only one that moves. */
-.dot-running {
+.glyph-running {
+  color: var(--running);
+  /* Running is the only genuinely live state, so it is the only thing that
+     moves. Opacity only: no layout, no repaint of the glass beneath. */
   animation: pulse 2s var(--ease) infinite;
 }
+.glyph-done {
+  color: var(--done);
+}
+.glyph-blocked {
+  color: var(--blocked);
+}
+.glyph-waiting {
+  color: var(--waiting);
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -213,7 +211,7 @@
   height: 10px;
   background: var(--stroke);
 }
-.metric .dot {
+.metric .glyph {
   align-self: center;
 }
 
@@ -367,21 +365,27 @@
 
 /* ===== Sticky alerts ================================================== */
 .alerts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
+  /* One recessed well with hairline dividers, NOT a stack of cards inside the
+     project card. Card-in-card is always the wrong answer, and the well is
+     denser besides. */
   margin: 0;
   padding: 0;
   list-style: none;
+  background: var(--glass-sunken);
+  border-radius: var(--r-chip);
+  overflow: hidden;
 }
 .alert {
   padding: var(--s-2);
-  background: var(--glass-sunken);
 }
-/* Unread alerts get a left rule — position is the signal, so the colour stays
-   neutral and does not compete with the status chip inside the card. */
+.alert + .alert {
+  border-top: 1px solid var(--stroke-inner);
+}
+/* Unread emphasis: a lifted surface plus a full inset ring. Deliberately not a
+   thick left stripe, and deliberately not a status colour. */
 .alert-unread {
-  border-left: 2px solid var(--unread);
+  background: var(--glass-hover);
+  box-shadow: inset 0 0 0 1px var(--stroke);
 }
 .alert-top {
   display: flex;
@@ -434,7 +438,7 @@
 }
 .tl-row {
   display: grid;
-  grid-template-columns: 14px 1fr;
+  grid-template-columns: 12px 1fr;
   gap: var(--s-2);
   padding-bottom: var(--s-2);
 }
@@ -446,15 +450,17 @@
   position: relative;
   display: flex;
   justify-content: center;
-  padding-top: 4px;
+  padding-top: 3px;
 }
 .tl-row:not(:last-child) .tl-rail::after {
   content: "";
   position: absolute;
-  top: 14px;
-  bottom: -8px;
+  top: 16px;
+  bottom: -6px;
   width: 1px;
-  background: var(--stroke);
+  /* --stroke (0.10) was invisible against the glass, which made the connector
+     dead weight. A connector either reads or it should not be drawn. */
+  background: var(--stroke-strong);
 }
 .tl-main {
   display: flex;
@@ -505,22 +511,22 @@
   margin-bottom: 6px;
 }
 .note-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
   margin: 0 0 var(--s-2);
   padding: 0;
   list-style: none;
+  background: var(--glass-sunken);
+  border-radius: var(--r-chip);
+  overflow: hidden;
 }
 .note {
   padding: 6px var(--s-2);
-  border-radius: var(--r-chip);
-  border: 1px solid var(--stroke-inner);
-  background: var(--glass-sunken);
+}
+.note + .note {
+  border-top: 1px solid var(--stroke-inner);
 }
 .note-pinned {
-  border-color: var(--stroke-strong);
-  background: var(--glass-raised);
+  background: var(--glass-hover);
+  box-shadow: inset 0 0 0 1px var(--stroke);
 }
 .note-text {
   margin: 0 0 3px;

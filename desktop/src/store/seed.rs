@@ -118,11 +118,11 @@ pub fn demo_state() -> HubState {
 
     // ---- Project B: a long-running cloud job plus finished ideation ----
     let b = s.project("Portfolio Rewrite", 190);
-    s.event(&b, "Cloud", "Build & deploy", Running, "Astro build running on the yyp branch — step 4 of 7.", Normal, 21, true);
+    s.event(&b, "Cloud", "Build & deploy", Running, "Astro build running on the yyp branch, step 4 of 7.", Normal, 21, true);
     // Unread sticky #2 — a completed handoff Yanice has not looked at yet.
     s.event(&b, "Codex", "Brainstorm IA", Done, "Three navigation structures drafted; case-study-first is the recommendation.", Normal, 6, false);
 
-    s.note(&b, Some("Codex"), "Keep the case study index flat — no category nesting until there are 10+ entries.", 60, true);
+    s.note(&b, Some("Codex"), "Keep the case study index flat: no category nesting until there are 10+ entries.", 60, true);
 
     s.state.events.sort_by(|x, y| x.timestamp.cmp(&y.timestamp));
     s.state

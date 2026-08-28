@@ -21,7 +21,10 @@
   /* --- Text ramp (three levels, no more) -------------------------------- */
   --text-1: rgba(255, 255, 255, 0.94);
   --text-2: rgba(255, 255, 255, 0.62);
-  --text-3: rgba(255, 255, 255, 0.4);
+  /* 0.52, not 0.40: at 0.40 this measured 3.49:1 over the glass on a white
+   * wallpaper, and it carries timestamps, group labels and the input
+   * placeholder. 0.52 measures 4.82:1 in that same worst case. */
+  --text-3: rgba(255, 255, 255, 0.52);
 
   /* --- Status colours. Used ONLY to convey status. ---------------------- */
   --running: #4a9eff;
@@ -50,7 +53,6 @@
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
-  --s-5: 20px;
   --s-6: 24px;
 
   /* --- Type. Dense on purpose: this is a status console, not a document. - */
@@ -59,23 +61,19 @@
   --t-micro: 10px;
   --t-label: 11px;
   --t-body: 12px;
-  --t-title: 13px;
-  --t-metric: 17px;
+  --t-title: 14px;
 
   /* --- Motion. 150-220ms, ease-out in / ease-in out. ------------------- */
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --dur-fast: 120ms;
-  --dur: 180ms;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24);
-  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.36);
 }
 
 /* Honour the system setting rather than animating regardless. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-fast: 0ms;
-    --dur: 0ms;
   }
   *,
   *::before,

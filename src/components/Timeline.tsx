@@ -14,7 +14,7 @@ export function Timeline({ events }: { events: Event[] }) {
       {events.map((e) => (
         <li key={e.id} className="tl-row">
           <span className="tl-rail">
-            <StatusDot status={e.status} size={6} />
+            <StatusDot status={e.status} size={10} />
           </span>
           <span className="tl-main">
             <span className="tl-head">

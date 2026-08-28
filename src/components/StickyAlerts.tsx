@@ -13,7 +13,7 @@ export function StickyAlerts({ alerts }: { alerts: Event[] }) {
   return (
     <ul className="alerts">
       {alerts.map((a) => (
-        <li key={a.id} className={`alert card${isUnread(a) ? " alert-unread" : ""}`}>
+        <li key={a.id} className={`alert${isUnread(a) ? " alert-unread" : ""}`}>
           <div className="alert-top">
             <StatusChip status={a.status} />
             <span className="alert-app">{a.sourceApp}</span>
@@ -42,7 +42,7 @@ export function StickyAlerts({ alerts }: { alerts: Event[] }) {
             <button
               className="btn danger"
               onClick={() => void actions.dismiss(a.id)}
-              title="Dismiss — removes this alert permanently"
+              title="Dismiss: removes this alert permanently"
             >
               <Close size={12} /> Dismiss
             </button>

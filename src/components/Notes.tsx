@@ -70,7 +70,7 @@ export function Notes({ projectId, notes }: { projectId: string; notes: Note[] }
           onChange={(e) => setSourceApp(e.target.value)}
           aria-label="Attribute this note to a source app"
         >
-          <option value="">No app</option>
+          <option value="">No source</option>
           {KNOWN_SOURCE_APPS.map((app) => (
             <option key={app} value={app}>
               {app}

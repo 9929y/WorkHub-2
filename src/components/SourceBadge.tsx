@@ -12,7 +12,7 @@ export function SourceBadge({ sourceApp, status }: { sourceApp: string; status: 
       className={`badge${known ? "" : " badge-unknown"}`}
       title={`${sourceApp} — ${STATUS_LABEL[status]}`}
     >
-      <StatusDot status={status} size={6} />
+      <StatusDot status={status} size={9} />
       {sourceApp}
     </span>
   );

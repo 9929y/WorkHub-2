@@ -1,0 +1,5 @@
+# pnpm 11 reads project settings from this file (they moved out of package.json).
+onlyBuiltDependencies:
+  - esbuild
+# Skip the pre-run dependency check; it otherwise aborts every `pnpm run`.
+verifyDepsBeforeRun: false

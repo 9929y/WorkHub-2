@@ -1,0 +1,631 @@
+/* Component styles. Colour, spacing and type come from tokens.css only. */
+
+/* ===== Status primitives ============================================== */
+.dot {
+  flex: none;
+  display: inline-block;
+  border-radius: var(--r-pill);
+  /* A faint ring lifts the dot off the glass at small sizes. */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+.dot-running {
+  background: var(--running);
+}
+.dot-done {
+  background: var(--done);
+}
+.dot-blocked {
+  background: var(--blocked);
+}
+.dot-waiting {
+  background: var(--waiting);
+}
+
+/* Running is the only live state, so it is the only one that moves. */
+.dot-running {
+  animation: pulse 2s var(--ease) infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--r-chip);
+  font-size: var(--t-micro);
+  font-weight: 590;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.chip-running {
+  color: var(--running);
+  background: var(--running-bg);
+}
+.chip-done {
+  color: var(--done);
+  background: var(--done-bg);
+}
+.chip-blocked {
+  color: var(--blocked);
+  background: var(--blocked-bg);
+}
+.chip-waiting {
+  color: var(--waiting);
+  background: var(--waiting-bg);
+}
+.chip-high {
+  color: var(--text-1);
+  background: transparent;
+  border: 1px solid var(--stroke-strong);
+  font-weight: 680;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 19px;
+  padding: 0 7px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--stroke);
+  background: var(--glass-sunken);
+  font-size: var(--t-micro);
+  font-weight: 560;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.badge-unknown {
+  border-style: dashed;
+}
+
+.status-running {
+  color: var(--running);
+}
+.status-done {
+  color: var(--done);
+}
+.status-blocked {
+  color: var(--blocked);
+}
+.status-waiting {
+  color: var(--waiting);
+}
+.blocked-text {
+  color: var(--blocked);
+}
+
+.wordmark {
+  font-size: var(--t-label);
+  font-weight: 640;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+}
+
+/* ===== Collapsed widget =============================================== */
+.widget {
+  padding: var(--s-2) var(--s-2) 0;
+}
+.widget-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 22px;
+  padding-left: 2px;
+}
+.unread-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 19px;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--unread);
+  border: 1px solid transparent;
+  color: var(--unread-ink);
+  font-size: var(--t-micro);
+  font-weight: 680;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.unread-pill:hover {
+  opacity: 0.82;
+}
+.all-clear {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+  padding-right: 2px;
+}
+
+.widget-body {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0 var(--s-2);
+  width: 100%;
+  padding: var(--s-1) var(--s-1) var(--s-2);
+  text-align: left;
+  border-radius: var(--r-chip);
+  transition: background var(--dur-fast) var(--ease);
+}
+.widget-body:hover {
+  background: var(--glass-hover);
+}
+.headline {
+  font-size: var(--t-title);
+  font-weight: 590;
+  color: var(--text-1);
+  letter-spacing: -0.005em;
+}
+.headline-empty {
+  grid-column: 1 / -1;
+  color: var(--text-3);
+  font-weight: 400;
+}
+.headline-meta {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.headline-sub {
+  grid-column: 2 / -1;
+  font-size: var(--t-label);
+  color: var(--text-2);
+  margin-top: 1px;
+}
+
+.widget-metrics {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 26px;
+  margin: 0 calc(var(--s-2) * -1);
+  padding: 0 var(--s-3);
+  border-top: 1px solid var(--stroke-inner);
+  background: var(--glass-sunken);
+}
+.metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.metric-value {
+  font-size: var(--t-body);
+  font-weight: 640;
+  color: var(--text-1);
+}
+.metric-label {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.metric-muted .metric-value {
+  color: var(--text-3);
+}
+.metric-sep {
+  width: 1px;
+  height: 10px;
+  background: var(--stroke);
+}
+.metric .dot {
+  align-self: center;
+}
+
+/* ===== Expanded panel ================================================= */
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex: none;
+  height: 34px;
+  padding: 0 var(--s-2) 0 var(--s-1);
+  border-bottom: 1px solid var(--stroke-inner);
+}
+.panel-stat {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+  margin-left: var(--s-1);
+}
+.panel-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-2);
+}
+.panel-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+  height: 26px;
+  padding: 0 var(--s-2);
+  border-top: 1px solid var(--stroke-inner);
+  background: var(--glass-sunken);
+}
+.foot-text {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.bus {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+}
+.bus-up {
+  background: var(--done);
+}
+.bus-down {
+  background: var(--blocked);
+}
+
+.banner {
+  flex: none;
+  padding: 6px var(--s-3);
+  font-size: var(--t-label);
+}
+.banner-error {
+  color: var(--blocked);
+  background: var(--blocked-bg);
+  border-bottom: 1px solid rgba(255, 95, 86, 0.28);
+}
+
+/* ===== Project card =================================================== */
+.project {
+  padding: var(--s-2);
+}
+.project-head {
+  margin-bottom: 6px;
+}
+.project-title-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  color: var(--text-3);
+  border-radius: var(--r-chip);
+  transition: color var(--dur-fast) var(--ease);
+}
+.project-title-btn:hover {
+  color: var(--text-1);
+}
+.project-name {
+  margin: 0;
+  font-size: var(--t-title);
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+}
+.project-unread {
+  flex: none;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--unread);
+  color: var(--unread-ink);
+  font-size: var(--t-micro);
+  font-weight: 680;
+  line-height: 16px;
+  text-align: center;
+}
+.project-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  margin-bottom: 6px;
+}
+.project-latest {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin: 0;
+  font-size: var(--t-label);
+  color: var(--text-2);
+}
+.latest-status {
+  font-weight: 620;
+  flex: none;
+}
+.latest-sep {
+  color: var(--text-3);
+  flex: none;
+}
+.latest-time {
+  flex: none;
+  margin-left: auto;
+  padding-left: var(--s-1);
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.project-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--stroke-inner);
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-bottom: 6px;
+  min-height: 22px;
+}
+.section-count,
+.notes-count {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+
+/* ===== Sticky alerts ================================================== */
+.alerts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.alert {
+  padding: var(--s-2);
+  background: var(--glass-sunken);
+}
+/* Unread alerts get a left rule — position is the signal, so the colour stays
+   neutral and does not compete with the status chip inside the card. */
+.alert-unread {
+  border-left: 2px solid var(--unread);
+}
+.alert-top {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-bottom: 5px;
+}
+.alert-app {
+  font-size: var(--t-micro);
+  font-weight: 560;
+  color: var(--text-2);
+}
+.alert-time {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.alert-task {
+  margin: 0 0 3px;
+  font-size: var(--t-body);
+  font-weight: 590;
+  color: var(--text-1);
+}
+.alert-summary {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-label);
+  line-height: 1.45;
+  color: var(--text-2);
+  /* Text is selectable here — summaries carry the detail worth copying. */
+  user-select: text;
+  cursor: text;
+}
+.alert-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+.alert-actions .btn {
+  text-decoration: none;
+}
+.alert-read-flag {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+
+/* ===== Timeline ======================================================= */
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tl-row {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: var(--s-2);
+  padding-bottom: var(--s-2);
+}
+.tl-row:last-child {
+  padding-bottom: 0;
+}
+/* Connector rail between events. */
+.tl-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+.tl-row:not(:last-child) .tl-rail::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: -8px;
+  width: 1px;
+  background: var(--stroke);
+}
+.tl-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tl-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-1);
+  min-width: 0;
+}
+.tl-task {
+  font-size: var(--t-label);
+  font-weight: 590;
+  color: var(--text-1);
+}
+.tl-app {
+  flex: none;
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.tl-time {
+  flex: none;
+  margin-left: auto;
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.tl-summary {
+  font-size: var(--t-label);
+  line-height: 1.4;
+  color: var(--text-2);
+  user-select: text;
+  cursor: text;
+}
+.empty-line {
+  margin: 0;
+  font-size: var(--t-label);
+  color: var(--text-3);
+}
+
+/* ===== Notes ========================================================== */
+.notes-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-bottom: 6px;
+}
+.note-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin: 0 0 var(--s-2);
+  padding: 0;
+  list-style: none;
+}
+.note {
+  padding: 6px var(--s-2);
+  border-radius: var(--r-chip);
+  border: 1px solid var(--stroke-inner);
+  background: var(--glass-sunken);
+}
+.note-pinned {
+  border-color: var(--stroke-strong);
+  background: var(--glass-raised);
+}
+.note-text {
+  margin: 0 0 3px;
+  font-size: var(--t-label);
+  line-height: 1.45;
+  color: var(--text-1);
+  user-select: text;
+  cursor: text;
+}
+.note-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-height: 22px;
+}
+.note-app,
+.note-time {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.note-pinned .note-time,
+.note-pinned .note-app {
+  color: var(--text-2);
+}
+/* Active pin. The pinned surface alone is a subtle cue, so the toggle itself
+   carries a filled background — the state must be unmistakable. */
+.btn-on {
+  color: var(--text-1);
+  background: var(--glass-active);
+  border-color: var(--stroke-strong);
+}
+
+.note-add {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+.note-input,
+.note-select {
+  font: inherit;
+  font-size: var(--t-label);
+  color: var(--text-1);
+  height: 24px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--stroke);
+  background: var(--glass-sunken);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.note-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--s-2);
+  user-select: text;
+}
+.note-input::placeholder {
+  color: var(--text-3);
+}
+.note-input:focus,
+.note-select:focus {
+  outline: none;
+  border-color: var(--running);
+}
+.note-select {
+  flex: none;
+  width: 74px;
+  padding: 0 2px 0 6px;
+  color: var(--text-2);
+  appearance: none;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.btn:disabled:hover {
+  background: none;
+  color: var(--text-2);
+  border-color: var(--stroke);
+}
+
+/* ===== Empty state ==================================================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  margin: auto;
+  padding: var(--s-6) var(--s-4);
+  color: var(--text-3);
+  text-align: center;
+}
+.empty-title {
+  margin: var(--s-1) 0 0;
+  font-size: var(--t-body);
+  font-weight: 590;
+  color: var(--text-2);
+}
+.empty-body {
+  margin: 0;
+  font-size: var(--t-label);
+  line-height: 1.5;
+}
+.empty-body code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  user-select: text;
+}

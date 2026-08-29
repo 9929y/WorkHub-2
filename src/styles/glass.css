@@ -39,47 +39,34 @@ body {
  * distort the content instead of reflowing it. */
 .morph {
   position: absolute;
-  top: 0;
-  left: 50%;
+  inset: 0;
+  border-radius: var(--r-shape);
   overflow: hidden;
-  transform: translateX(-50%);
-  will-change: width, height;
-  /* Glassmorphism: blur 10-20px with saturation lift, so what shows through
-     reads as refracted rather than merely dimmed. */
-  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-  transition:
-    width var(--morph) var(--spring),
-    height var(--morph) var(--spring),
-    border-radius var(--morph) var(--spring),
-    background-color var(--morph) var(--ease);
+  /* The element fills the window; the WINDOW is what animates (see
+     window::animate_to in Rust). Animating size here as well would fight it,
+     and the frost, which is the window, would lag the shape. */
+  width: 100%;
+  height: 100%;
+  transition: background-color var(--morph) var(--ease);
 }
 
 /* Collapsed: an opaque black pill standing in for the notch. Not themed, not
    glass: the notch is black in light mode too. */
 /* A transition uses the duration of the state it is moving TO, so putting the
    shorter duration here is what makes collapsing quicker than expanding. */
+/* One radius for every shape: NSVisualEffectView is rounded once at the window
+   level, so the frost cannot have a different corner from the shape on top. */
 .morph.is-island {
-  transition-duration: var(--morph-out);
-  width: 224px;
-  height: 36px;
-  border-radius: var(--r-pill);
   background: var(--island-bg);
 }
 
 /* Expanded: a themed, translucent panel. */
 /* The arrival: an island stretched just far enough to be read. */
 .morph.is-alert {
-  width: 340px;
-  height: 78px;
-  border-radius: 22px;
   background: var(--island-bg);
 }
 
 .morph.is-panel {
-  width: 360px;
-  /* height is set inline from the measured content; see App.tsx */
-  border-radius: 24px;
   background: var(--glass-base);
 }
 

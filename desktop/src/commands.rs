@@ -104,6 +104,16 @@ pub fn open_target(app: AppHandle, source_app: String, url: Option<String>) -> C
     crate::launch::open(&app, &source_app, url.as_deref())
 }
 
+/// What appearance the window is actually in, read from the platform rather
+/// than inferred from a CSS media query the webview may not honour.
+#[tauri::command]
+pub fn current_theme(win: WebviewWindow) -> CmdResult<String> {
+    Ok(match win.theme() {
+        Ok(tauri::Theme::Dark) => "dark".into(),
+        _ => "light".into(),
+    })
+}
+
 #[tauri::command]
 pub fn server_info() -> CmdResult<UiServerInfo> {
     Ok(UiServerInfo {

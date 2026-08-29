@@ -5,7 +5,7 @@ import { Island } from "./components/Island";
 import { Panel } from "./components/Panel";
 
 export default function App() {
-  const { shape, loaded, panelHeight, init } = useHub();
+  const { shape, loaded, init } = useHub();
 
   useEffect(() => {
     let cancelled = false;
@@ -20,10 +20,11 @@ export default function App() {
     };
   }, [init]);
 
-  // One element morphs between all three shapes. The native window is only
-  // resized to make room; the spring itself is CSS.
+  // The element simply fills the window. The window is what animates (see
+  // window::animate_to), because NSVisualEffectView is the window: making the
+  // frost and the shape the same object is the only way to have both.
   return (
-    <div className={`morph is-${shape}`} style={shape === "panel" ? { height: panelHeight } : undefined}>
+    <div className={`morph is-${shape}`}>
       {loaded ? shape === "panel" ? <Panel /> : shape === "alert" ? <Arrival /> : <Island /> : null}
     </div>
   );

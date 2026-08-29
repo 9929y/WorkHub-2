@@ -8,6 +8,9 @@ import type { HubState, ServerInfo } from "./types";
 export const getState = () => invoke<HubState>("get_state");
 export const serverInfo = () => invoke<ServerInfo>("server_info");
 
+/** The window's real appearance, read from the platform. */
+export const currentTheme = () => invoke<string>("current_theme");
+
 export const setRead = (eventId: string, read: boolean) =>
   invoke<void>("set_read", { eventId, read });
 

@@ -45,6 +45,17 @@ pub const PANEL: (f64, f64) = (360.0, 420.0);
 /// Gap from the work-area edges.
 const MARGIN: f64 = 6.0;
 
+/// Every shape shares this radius.
+///
+/// NSVisualEffectView is rounded once, at the window level, so the frost cannot
+/// have a different corner from the shape drawn on top of it. The island is
+/// 36pt tall, so its pill radius is 18, and everything else matches it.
+pub const RADIUS: f64 = 18.0;
+
+/// How long the native frame animation runs. Matches --morph in tokens.css.
+const MORPH_MS: u64 = 260;
+const FRAME_MS: u64 = 8;
+
 /// A monitor's work area in logical pixels: `(x, y, width, height)`.
 #[derive(Clone, Copy, Debug)]
 struct Area {
@@ -163,10 +174,73 @@ pub fn set_panel_height(win: &WebviewWindow, height: f64) {
     }
 }
 
+/// Ease-out with a small overshoot, mirroring --spring in tokens.css.
+fn spring(t: f64) -> f64 {
+    let c = 1.70158 * 0.8;
+    let t = t - 1.0;
+    t * t * ((c + 1.0) * t + c) + 1.0
+}
+
+/// Animate the window frame itself, rather than animating an element inside it.
+///
+/// This is the whole reason the frost works: NSVisualEffectView fills the
+/// window, so the only way to have real glass AND a morph is for the window to
+/// be the animating thing. A CSS size animation would leave a frosted rectangle
+/// sitting around the shape for the length of every transition.
+pub fn animate_to(win: &WebviewWindow, to_w: f64, to_h: f64) {
+    let scale = win.scale_factor().unwrap_or(2.0);
+    let Ok(pos) = win.outer_position() else { return };
+    let Ok(size) = win.outer_size() else { return };
+    let (from_w, from_h) = (size.width as f64 / scale, size.height as f64 / scale);
+    let (x, y) = (pos.x as f64 / scale, pos.y as f64 / scale);
+    let centre = x + from_w / 2.0;
+
+    // Clamp the destination once, so every frame lands inside the work area.
+    let area = area_at(win, x, y).or_else(|| default_area(win));
+    // Copy what the animation task needs; a borrowing closure cannot outlive us.
+    let bounds = area.map(|a| (a.x, a.w));
+    let target_x = move |w: f64| {
+        let raw = centre - w / 2.0;
+        match bounds {
+            Some((ax, aw)) => raw.clamp(ax, (ax + aw - w - MARGIN).max(ax)),
+            None => raw,
+        }
+    };
+    let target_y = match area {
+        Some(a) => y.clamp(a.y, (a.y + a.h - to_h - MARGIN).max(a.y)),
+        None => y,
+    };
+
+    if (from_w - to_w).abs() < 0.5 && (from_h - to_h).abs() < 0.5 {
+        return;
+    }
+
+    let win = win.clone();
+    tauri::async_runtime::spawn(async move {
+        let steps = (MORPH_MS / FRAME_MS).max(1);
+        for i in 1..=steps {
+            let p = spring(i as f64 / steps as f64);
+            let w = from_w + (to_w - from_w) * p;
+            let h = from_h + (to_h - from_h) * p;
+            let _ = win.set_size(LogicalSize::new(w, h));
+            let _ = win.set_position(LogicalPosition::new(target_x(w).round(), target_y));
+            tokio::time::sleep(std::time::Duration::from_millis(FRAME_MS)).await;
+        }
+        // Land exactly on the target; the overshoot must not be where it stops.
+        let _ = win.set_size(LogicalSize::new(to_w, to_h));
+        let _ = win.set_position(LogicalPosition::new(target_x(to_w).round(), target_y));
+    });
+}
+
 /// Resize to a shape, keeping the **horizontal centre fixed** so everything
-/// unfolds straight down from the island, the way a notch island does. Then
-/// clamp, so a taller shape cannot run off the bottom of the screen.
+/// unfolds straight down from the island, the way a notch island does.
 pub fn set_shape(win: &WebviewWindow, shape: Shape) {
+    let (w, h) = shape.size();
+    animate_to(win, w, h);
+}
+
+#[allow(dead_code)]
+fn set_shape_instant(win: &WebviewWindow, shape: Shape) {
     let (w, h) = shape.size();
 
     let scale = win.scale_factor().unwrap_or(2.0);
@@ -194,34 +268,53 @@ pub fn set_shape(win: &WebviewWindow, shape: Shape) {
 mod tests {
     use super::*;
 
-    /// The window size and the CSS element size must agree, or the morph shape
-    /// gets clipped by the window. This caught a two-line arrival being cut off
-    /// at 62px while the CSS asked for 78px.
+    /// The island is a pill, so its radius is half its height. Every other shape
+    /// shares that radius because the frost is rounded once, at the window.
     #[test]
-    fn shapes_match_the_css() {
+    fn radius_is_the_island_pill() {
+        assert_eq!(RADIUS, ISLAND.1 / 2.0);
+    }
+
+    /// The CSS must not set its own size: the window animates the frame, and a
+    /// second animation on the same dimension would make the frost lag the shape.
+    #[test]
+    fn css_does_not_animate_size() {
         let css = std::fs::read_to_string(
             concat!(env!("CARGO_MANIFEST_DIR"), "/../src/styles/glass.css"),
         )
         .expect("glass.css should sit next to the crate");
+        let morph = css
+            .split(".morph {")
+            .nth(1)
+            .and_then(|s| s.split('}').next())
+            .expect(".morph rule not found");
+        // Look at the transition DECLARATION, not the whole block: `width: 100%`
+        // is exactly what should be there.
+        let transition = morph
+            .split("transition:")
+            .nth(1)
+            .and_then(|s| s.split(';').next())
+            .unwrap_or("");
+        assert!(
+            !transition.contains("width") && !transition.contains("height"),
+            "`transition: {transition}` animates size; window::animate_to owns the frame"
+        );
+        assert!(morph.contains("width: 100%"), ".morph should fill the window");
+    }
 
-        for (selector, (w, h)) in [(".morph.is-island", ISLAND), (".morph.is-alert", ALERT)] {
-            let block = css
-                .split(selector)
-                .nth(1)
-                .and_then(|s| s.split('}').next())
-                .unwrap_or_else(|| panic!("{selector} not found in glass.css"));
-            for (prop, expected) in [("width", w), ("height", h)] {
-                let found = block
-                    .split(&format!("{prop}:"))
-                    .nth(1)
-                    .and_then(|s| s.split("px").next())
-                    .and_then(|s| s.trim().parse::<f64>().ok())
-                    .unwrap_or_else(|| panic!("{selector} has no {prop}"));
-                assert_eq!(
-                    found, expected,
-                    "{selector} {prop}: CSS says {found}, window.rs says {expected}"
-                );
-            }
-        }
+    /// The radius in CSS has to match the radius the vibrancy view was given.
+    #[test]
+    fn css_radius_matches_the_frost() {
+        let tokens = std::fs::read_to_string(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../src/styles/tokens.css"),
+        )
+        .expect("tokens.css should sit next to the crate");
+        let found = tokens
+            .split("--r-shape:")
+            .nth(1)
+            .and_then(|s| s.split("px").next())
+            .and_then(|s| s.trim().parse::<f64>().ok())
+            .expect("--r-shape not found");
+        assert_eq!(found, RADIUS, "CSS --r-shape and window::RADIUS disagree");
     }
 }

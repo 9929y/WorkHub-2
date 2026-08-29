@@ -1,14 +1,17 @@
 /* Workhub design tokens.
  *
- * Two themes, selected by the system appearance. The native window material is
- * `Popover`, which AppKit renders light or dark to match, so `prefers-color-scheme`
- * and the window frost always agree without any theme plumbing.
+ * Two themes. The theme is pushed from the platform onto <html data-theme>,
+ * because the webview does not reliably honour `prefers-color-scheme`; the media
+ * query is kept only as a fallback for the browser harness.
  *
  * Every text/background pair below is measured against the *tint alone* over a
  * worst-case wallpaper, not against an assumed backdrop. */
 
 :root {
-  /* --- Radii. Nothing rounder than 12px. ------------------------------- */
+  /* --- Radii ----------------------------------------------------------- */
+  /* One shape radius, matching window::RADIUS in Rust. The frost is rounded
+   * once at the window level, so the CSS cannot disagree with it. */
+  --r-shape: 18px;
   --r-chip: 8px;
   --r-pill: 999px;
 
@@ -58,10 +61,13 @@
 }
 
 /* ===== Dark (default) ================================================== */
-:root {
+:root,
+:root[data-theme="dark"] {
   color-scheme: dark;
 
-  --glass-base: rgba(20, 21, 24, 0.93);
+  /* Real transparency at last: NSVisualEffectView does the frosting, so the
+   * tint only has to carry contrast. 0.50 is the measured AA floor. */
+  --glass-base: rgba(20, 21, 24, 0.5);
   --glass-hover: rgba(255, 255, 255, 0.06);
   --glass-active: rgba(255, 255, 255, 0.1);
 
@@ -91,19 +97,61 @@
   --rim-top: rgba(255, 255, 255, 0.22);
   --rim-bottom: rgba(0, 0, 0, 0.30);
 
-  --island-bg: rgba(18, 19, 22, 0.93);
+  --island-bg: rgba(18, 19, 22, 0.52);
   --island-ink: var(--text-1);
   --island-ink-2: var(--text-3);
 }
 
 /* ===== Light =========================================================== */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Slightly more opaque than dark: dark-on-light loses contrast faster as
+   * the wallpaper darkens. */
+  /* Light needs more: dark text loses contrast faster over a light
+   * translucent panel as the wallpaper darkens. 0.60 measured. */
+  --glass-base: rgba(249, 249, 251, 0.6);
+  --glass-hover: rgba(0, 0, 0, 0.05);
+  --glass-active: rgba(0, 0, 0, 0.09);
+
+  --stroke: rgba(0, 0, 0, 0.12);
+  --stroke-strong: rgba(0, 0, 0, 0.2);
+
+  --text-1: rgba(0, 0, 0, 0.88);
+  --text-2: rgba(0, 0, 0, 0.62);
+  /* 0.58, solved not guessed: 0.50 measured 3.82:1 on the worst-case
+   * light panel (rgb 233). 0.58 measures 5.03:1. */
+  --text-3: rgba(0, 0, 0, 0.58);
+
+  /* Darkened so they still hit contrast on a light surface: the dark-mode
+   * hues are far too light here. */
+  --running: #0b56b8; /* #0a63d6 measured 4.28:1 on the light glass */
+  --done: #0a6b3b; /* #0d7a45 measured 4.43:1, just under the body floor */
+  --blocked: #c62317;
+  --waiting: #8a5a00;
+
+  --unread: rgba(0, 0, 0, 0.82);
+  --unread-ink: #ffffff;
+
+  --specular: rgba(255, 255, 255, 0.95);
+  --rim-top: rgba(255, 255, 255, 0.8);
+  --rim-bottom: rgba(0, 0, 0, 0.14);
+
+  --island-bg: rgba(252, 252, 253, 0.62);
+  --island-ink: var(--text-1);
+  --island-ink-2: var(--text-3);
+}
+
+/* Fallback only: the platform normally sets data-theme before first paint. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     color-scheme: light;
 
     /* Slightly more opaque than dark: dark-on-light loses contrast faster as
      * the wallpaper darkens. */
-    --glass-base: rgba(249, 249, 251, 0.95);
+    /* Light needs more: dark text loses contrast faster over a light
+     * translucent panel as the wallpaper darkens. 0.60 measured. */
+    --glass-base: rgba(249, 249, 251, 0.6);
     --glass-hover: rgba(0, 0, 0, 0.05);
     --glass-active: rgba(0, 0, 0, 0.09);
 
@@ -118,7 +166,7 @@
 
     /* Darkened so they still hit contrast on a light surface: the dark-mode
      * hues are far too light here. */
-    --running: #0a63d6;
+    --running: #0b56b8; /* #0a63d6 measured 4.28:1 on the light glass */
     --done: #0a6b3b; /* #0d7a45 measured 4.43:1, just under the body floor */
     --blocked: #c62317;
     --waiting: #8a5a00;
@@ -130,7 +178,7 @@
     --rim-top: rgba(255, 255, 255, 0.8);
     --rim-bottom: rgba(0, 0, 0, 0.14);
 
-    --island-bg: rgba(252, 252, 253, 0.95);
+    --island-bg: rgba(252, 252, 253, 0.62);
     --island-ink: var(--text-1);
     --island-ink-2: var(--text-3);
   }

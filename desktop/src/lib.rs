@@ -12,7 +12,7 @@ use std::sync::Arc;
 use store::{json::JsonStore, Store};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Manager, WebviewWindow};
+use tauri::{Emitter, Manager, WebviewWindow};
 
 /// Shared across commands and the HTTP server. Only the trait is exposed, which
 /// is what keeps the SQLite swap contained to `store/`.
@@ -34,6 +34,7 @@ pub fn run() {
             commands::save_position,
             commands::reset_position,
             commands::open_target,
+            commands::current_theme,
             commands::server_info,
         ])
         .setup(|app| {
@@ -53,6 +54,17 @@ pub fn run() {
             setup_window(&win, &ui);
             setup_tray(app.handle())?;
 
+            // The webview does not reliably pick up the system appearance on its
+            // own, so the theme is pushed explicitly and on every change rather
+            // than left to `prefers-color-scheme`.
+            let themed = app.handle().clone();
+            win.on_window_event(move |event| {
+                if let tauri::WindowEvent::ThemeChanged(theme) = event {
+                    let name = if *theme == tauri::Theme::Dark { "dark" } else { "light" };
+                    let _ = themed.emit("workhub://theme", name);
+                }
+            });
+
             // Event bus runs in-process; no sidecar to supervise.
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(server::serve(server_state, handle));
@@ -64,12 +76,31 @@ pub fn run() {
 }
 
 fn setup_window(win: &WebviewWindow, ui: &model::UiState) {
-    // No native vibrancy here, deliberately.
+    // Real frosted glass.
     //
-    // NSVisualEffectView fills the *window*, but the island morphs an *element*
-    // inside it, so a frosted rectangle would flash around the pill for the
-    // duration of every collapse. A Dynamic Island is opaque anyway, so CSS owns
-    // the whole surface and the blur follows the shape exactly.
+    // CSS `backdrop-filter` cannot do this: in a transparent window it samples
+    // only the layers beneath it *inside the web content*, and macOS does not
+    // composite the desktop into the webview's backdrop. It produced exactly
+    // zero blur. NSVisualEffectView is the only thing that frosts the desktop.
+    //
+    // It fills the window, which is why the morph animates the window frame
+    // itself (see window::animate_to) rather than an element inside it: that
+    // way the frost is always exactly the shape on screen.
+    //
+    // `Popover` is a semantic material, so AppKit renders it light or dark to
+    // match the system appearance on its own.
+    #[cfg(target_os = "macos")]
+    {
+        use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial, NSVisualEffectState};
+        if let Err(e) = apply_vibrancy(
+            win,
+            NSVisualEffectMaterial::Popover,
+            Some(NSVisualEffectState::Active), // stay frosted when unfocused
+            Some(window::RADIUS),
+        ) {
+            eprintln!("[workhub] vibrancy unavailable, falling back to the CSS tint: {e}");
+        }
+    }
 
     let (w, h) = if ui.collapsed { window::ISLAND } else { window::PANEL };
     let _ = win.set_size(tauri::LogicalSize::new(w, h));

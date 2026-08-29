@@ -97,6 +97,13 @@ export const useHub = create<HubStore>((set, get) => ({
     const unlistenError = await listen<string>("workhub://server-error", (e) =>
       set({ serverError: e.payload }),
     );
+
+    // The webview does not reliably honour prefers-color-scheme, so the theme
+    // is taken from the platform and stamped onto <html>.
+    const applyTheme = (name: string) =>
+      document.documentElement.setAttribute("data-theme", name === "dark" ? "dark" : "light");
+    api.currentTheme().then(applyTheme).catch(() => {});
+    const unlistenTheme = await listen<string>("workhub://theme", (e) => applyTheme(e.payload));
     api.serverInfo().then((server) => set({ server })).catch(() => {});
 
     // Recompute staleness across midnight without a reload.
@@ -105,6 +112,7 @@ export const useHub = create<HubStore>((set, get) => ({
     return () => {
       unlistenState();
       unlistenError();
+      unlistenTheme();
       window.clearInterval(timer);
       if (alertTimer !== undefined) window.clearTimeout(alertTimer);
       if (shrinkTimer !== undefined) window.clearTimeout(shrinkTimer);

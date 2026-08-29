@@ -340,7 +340,21 @@ Light mode is not the dark palette inverted: it needs a more opaque tint, becaus
 text over a light translucent panel loses contrast far faster as the wallpaper darkens,
 and darker status hues, because the dark-mode hues fail outright on a light surface.
 
-**Why the glass is not 15% opaque.** Glassmorphism's spec calls for 15–30%. Measured
+**The frost is native, not CSS.** `backdrop-filter` cannot do this job: in a
+transparent window it samples only the layers beneath it *inside the web content*,
+and macOS does not composite the desktop into the webview's backdrop, so it produced
+exactly zero blur. `NSVisualEffectView` (`Popover`, a semantic material that follows
+the system appearance) is the only thing that frosts the desktop.
+
+It fills the **window**, which is why the morph animates the window frame itself
+(`window::animate_to`) rather than an element inside it. Making the frost and the shape
+the same object is the only way to have both. Everything shares one corner radius for
+the same reason, pinned by a test.
+
+Because the material does the frosting, the tint only has to carry contrast, so it
+drops to **0.50 dark / 0.60 light** and the glass is genuinely translucent.
+
+**Why not 15% opaque.** Glassmorphism's spec calls for 15–30%. Measured
 over an arbitrary wallpaper that puts the blocked red at **1.01:1**, and blur does not
 rescue it: blur destroys the wallpaper's detail but preserves its average luminance. The
 AA floor is a tint of 0.89 (dark) and 0.93 (light), so the material reads through

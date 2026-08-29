@@ -10,8 +10,13 @@ import * as api from "./api";
 import { rollupProjects, summarise, type HudSummary, type ProjectRollup } from "./rollup";
 import type { HubState, ServerInfo } from "./types";
 
-/** Must match --morph in tokens.css. */
+/** Must match --morph / --morph-out in tokens.css. */
 const MORPH_MS = 260;
+/** Exit is deliberately faster than enter, so dismissing never feels sluggish. */
+const MORPH_OUT_MS = 170;
+
+/** Pending window-shrink, so re-opening mid-collapse can cancel it. */
+let shrinkTimer: number | undefined;
 /** Must match PANEL_MIN_H / PANEL_MAX_H in desktop/src/window.rs. */
 const PANEL_MIN_H = 96;
 const PANEL_MAX_H = 520;
@@ -90,6 +95,13 @@ export const useHub = create<HubStore>((set, get) => ({
   setExpanded: async (expanded) => {
     // The island morphs in CSS; the native window only has to be big enough to
     // contain the animation. So grow before animating, and shrink after.
+    // Re-opening mid-collapse must cancel the pending shrink. Without this the
+    // window snaps back to island size while the panel is on screen, clipping it.
+    if (shrinkTimer !== undefined) {
+      window.clearTimeout(shrinkTimer);
+      shrinkTimer = undefined;
+    }
+
     if (expanded) {
       // Grow the window to the ceiling first so the morph has room; `fitPanel`
       // shrinks it to the real content height once the panel has rendered.
@@ -99,7 +111,11 @@ export const useHub = create<HubStore>((set, get) => ({
     }
     set({ expanded: false });
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.setTimeout(() => void api.setPanelExpanded(false), reduced ? 0 : MORPH_MS);
+    shrinkTimer = window.setTimeout(() => {
+      shrinkTimer = undefined;
+      // Guard again: the state can have flipped back while we waited.
+      if (!useHub.getState().expanded) void api.setPanelExpanded(false);
+    }, reduced ? 0 : MORPH_OUT_MS);
   },
 
   toggleExpanded: async () => {

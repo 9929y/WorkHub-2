@@ -18,7 +18,9 @@ export function ProjectRow({ rollup }: { rollup: ProjectRollup }) {
   return (
     <section className="project">
       <h2 className="project-head">
-        <span className="project-name truncate">{project.name}</span>
+        <span className="project-name truncate" title={project.name}>
+          {project.name}
+        </span>
         <span
           className="progress"
           role="img"
@@ -55,7 +57,7 @@ export function ProjectRow({ rollup }: { rollup: ProjectRollup }) {
           <button
             className="need-main"
             onClick={() => void actions.open(n.task.sourceApp, n.event?.url)}
-            title={`${n.reason}. Open ${n.task.sourceApp}.${n.event?.summary ? `\n\n${n.event.summary}` : ""}`}
+            title={`${n.task.name}\n${n.reason}. Click to open ${n.task.sourceApp}.${n.event?.summary ? `\n\n${n.event.summary}` : ""}`}
           >
             {/* Which platform is asking is the first thing you need to know. */}
             <PlatformIcon sourceApp={n.task.sourceApp} size={13} />

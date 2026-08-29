@@ -24,7 +24,9 @@ export function History({ items }: { items: ProjectRollup[] }) {
       {open
         ? items.map((r) => (
             <div key={r.project.id} className="history-row">
-              <span className="truncate">{r.project.name}</span>
+              <span className="truncate" title={r.project.name}>
+                {r.project.name}
+              </span>
               <span className="history-marks">
                 {r.platforms.map((p) => (
                   <PlatformIcon key={p.sourceApp} sourceApp={p.sourceApp} size={12} />

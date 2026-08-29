@@ -53,7 +53,10 @@ body {
 
 /* Collapsed: an opaque black pill standing in for the notch. Not themed, not
    glass: the notch is black in light mode too. */
+/* A transition uses the duration of the state it is moving TO, so putting the
+   shorter duration here is what makes collapsing quicker than expanding. */
 .morph.is-island {
+  transition-duration: var(--morph-out);
   width: 224px;
   height: 36px;
   border-radius: var(--r-pill);

@@ -9,7 +9,6 @@
 
 :root {
   /* --- Radii. Nothing rounder than 12px. ------------------------------- */
-  --r-window: 12px;
   --r-chip: 8px;
   --r-pill: 999px;
 
@@ -34,6 +33,9 @@
    * a small deliberate overshoot; keep it restrained, it is chrome, not a toy.
    * --morph must stay in sync with MORPH_MS in lib/store.ts. */
   --morph: 260ms;
+  /* Exit runs at ~65% of enter: closing should feel immediate, not narrated.
+   * Must stay in sync with MORPH_OUT_MS in lib/store.ts. */
+  --morph-out: 170ms;
   --spring: cubic-bezier(0.34, 1.32, 0.36, 1);
 
 }

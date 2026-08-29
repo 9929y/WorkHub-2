@@ -37,28 +37,3 @@ export const Close = ({ size = 14, className }: Props) => (
   </svg>
 );
 
-export const Check = ({ size = 14, className }: Props) => (
-  <svg {...base(size)} className={className}>
-    <path d="M3.5 8.5l3 3 6-7" />
-  </svg>
-);
-
-export const Grip = ({ size = 14, className }: Props) => (
-  <svg {...base(size)} className={className} strokeWidth={0} fill="currentColor">
-    <circle cx="6" cy="4" r="1" />
-    <circle cx="10" cy="4" r="1" />
-    <circle cx="6" cy="8" r="1" />
-    <circle cx="10" cy="8" r="1" />
-    <circle cx="6" cy="12" r="1" />
-    <circle cx="10" cy="12" r="1" />
-  </svg>
-);
-
-export const Link = ({ size = 14, className }: Props) => (
-  <svg {...base(size)} className={className}>
-    <path d="M9 3.5h3.5V7" />
-    <path d="M12.5 3.5 7.5 8.5" />
-    <path d="M11.5 9.5v2a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h2" />
-  </svg>
-);
-

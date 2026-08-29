@@ -302,6 +302,37 @@ mod tests {
         assert!(morph.contains("width: 100%"), ".morph should fill the window");
     }
 
+    /// `.morph` fills the window exactly, so an OUTER box-shadow lands outside
+    /// the window and gets clipped against its edge, painting hard dark bands
+    /// down the sides. Depth belongs to the compositor. This regressed twice.
+    #[test]
+    fn morph_has_no_outer_shadow() {
+        let css = std::fs::read_to_string(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../src/styles/glass.css"),
+        )
+        .expect("glass.css should sit next to the crate");
+        let morph = css
+            .split(".morph {")
+            .nth(1)
+            .and_then(|s| s.split('}').next())
+            .expect(".morph rule not found");
+        let shadow = morph
+            .split("box-shadow:")
+            .nth(1)
+            .and_then(|s| s.split(';').next())
+            .unwrap_or("");
+        for layer in shadow.split(',') {
+            let layer = layer.trim();
+            if layer.is_empty() {
+                continue;
+            }
+            assert!(
+                layer.starts_with("inset"),
+                "outer shadow layer `{layer}` on .morph will be clipped by the window edge"
+            );
+        }
+    }
+
     /// The radius in CSS has to match the radius the vibrancy view was given.
     #[test]
     fn css_radius_matches_the_frost() {

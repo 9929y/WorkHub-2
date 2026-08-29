@@ -48,6 +48,17 @@ body {
   width: 100%;
   height: 100%;
   transition: background-color var(--morph) var(--ease);
+  /* Lensing only, and strictly INSET.
+   *
+   * An outer drop shadow here painted the ugly dark bands down the left and
+   * right: this element fills the window exactly, so an outer shadow lands
+   * outside the window and gets clipped against its edge. Depth is the
+   * compositor's job now (`shadow: true`), because macOS knows the window's
+   * real rounded shape and can draw a correct shadow around it. */
+  box-shadow:
+    inset 0 1px 0 0 var(--rim-top),
+    inset 0 0 0 1px var(--stroke),
+    inset 0 -1px 0 0 var(--rim-bottom);
 }
 
 /* Collapsed: an opaque black pill standing in for the notch. Not themed, not
@@ -73,13 +84,6 @@ body {
 /* Lensing. A rim that is bright on top and dark below, plus a specular
    highlight along the top edge: the way light actually behaves at the edge of a
    piece of glass. This carries the material, because the tint cannot. */
-.morph {
-  box-shadow:
-    inset 0 1px 0 0 var(--rim-top),
-    inset 0 0 0 1px var(--stroke),
-    inset 0 -1px 0 0 var(--rim-bottom),
-    0 4px 20px rgba(0, 0, 0, 0.22);
-}
 /* The specular sits in the top 8px only, above every line of text.
    A wash over the content area measured 2.97:1 on the blocked red in dark mode:
    lensing concentrates at the edge in the real world, and it has to here too. */

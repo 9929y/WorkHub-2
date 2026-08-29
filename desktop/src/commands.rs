@@ -11,7 +11,9 @@ use tauri::{AppHandle, Emitter, State, WebviewWindow};
 type CmdResult<T> = Result<T, String>;
 
 fn broadcast(app: &AppHandle) {
-    let _ = app.emit(STATE_EVENT, ());
+    // `None` = "state changed because the user did something", which must never
+    // pop an alert. Only server.rs sends an id.
+    let _ = app.emit(STATE_EVENT, None::<String>);
 }
 
 #[tauri::command]
@@ -52,20 +54,19 @@ pub fn dismiss(app: AppHandle, state: State<'_, AppState>, event_id: String) -> 
     Ok(())
 }
 
-/// Grow or shrink the native window to match the UI mode, and remember the choice.
+/// Resize the window to one of the three shapes: island, alert, or panel.
+///
+/// `alert` is the transient toast the island morphs into when an agent reports;
+/// it is not a mode the user can be left in, so it is not persisted.
 #[tauri::command]
-pub fn set_panel_expanded(
-    win: WebviewWindow,
-    state: State<'_, AppState>,
-    expanded: bool,
-) -> CmdResult<()> {
-    window::set_expanded(&win, expanded);
-    let mut ui = state
-        .store
-        .snapshot()
-        .map_err(|e| e.to_string())?
-        .ui;
-    ui.collapsed = !expanded;
+pub fn set_shape(win: WebviewWindow, state: State<'_, AppState>, shape: String) -> CmdResult<()> {
+    let shape = window::Shape::parse(&shape);
+    window::set_shape(&win, shape);
+    if shape == window::Shape::Alert {
+        return Ok(());
+    }
+    let mut ui = state.store.snapshot().map_err(|e| e.to_string())?.ui;
+    ui.collapsed = shape == window::Shape::Island;
     state.store.save_ui(ui).map_err(|e| e.to_string())
 }
 
@@ -88,8 +89,8 @@ pub fn save_position(win: WebviewWindow, state: State<'_, AppState>) -> CmdResul
 
 #[tauri::command]
 pub fn reset_position(win: WebviewWindow, state: State<'_, AppState>) -> CmdResult<()> {
-    let expanded = !state.store.snapshot().map_err(|e| e.to_string())?.ui.collapsed;
-    let width = if expanded { window::EXPANDED.0 } else { window::COLLAPSED.0 };
+    let collapsed = state.store.snapshot().map_err(|e| e.to_string())?.ui.collapsed;
+    let width = if collapsed { window::ISLAND.0 } else { window::PANEL.0 };
     window::place_top_centre(&win, width);
     let mut ui = state.store.snapshot().map_err(|e| e.to_string())?.ui;
     ui.position = None;

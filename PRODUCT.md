@@ -69,7 +69,10 @@ not an app.
    to a red status chip is a bug, not a style.
 3. **Never colour-only.** Status must survive being printed in greyscale: shape and
    text carry it too. This is a four-colour system including the red/green pair.
-4. **Glanceable beats complete, everywhere.** The widget answers "does anything need
+4. **Catch edges, not levels.** The job is to notice the transition into "needs a
+   human", not to render the current state of everything. A level never changes what
+   Yanice does next; that is what made earlier versions feel heavy despite being
+   small. **Glanceable beats complete, everywhere.** The widget answers "does anything need
    me?" in one look. The panel answers "what, and in which project?" Neither is a
    place to be thorough. When in doubt, cut. Notes and the per-event timeline were
    both cut for exactly this reason: they were record-keeping, and this is an

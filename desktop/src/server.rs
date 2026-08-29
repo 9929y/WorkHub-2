@@ -79,8 +79,9 @@ async fn post_event(
 ) -> impl IntoResponse {
     match ctx.state.store.ingest_event(payload) {
         Ok(event) => {
-            // Push, don't poll: the HUD updates the moment an agent reports.
-            let _ = ctx.app.emit(STATE_EVENT, ());
+            // Carry the id of what just landed. UI-driven mutations broadcast
+            // `None`, so only a genuine agent report can raise an alert.
+            let _ = ctx.app.emit(STATE_EVENT, Some(event.id.clone()));
             (StatusCode::CREATED, Json(json!({ "ok": true, "event": event })))
         }
         Err(e) => (

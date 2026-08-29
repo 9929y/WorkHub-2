@@ -137,11 +137,18 @@
 .panel-grip:active {
   cursor: grabbing;
 }
-.panel-stat {
+.panel-title {
   flex: 1;
-  font-size: var(--t-label);
+  font-size: var(--t-title);
+  font-weight: 590;
+  letter-spacing: -0.01em;
   color: var(--text-2);
   pointer-events: none;
+}
+.panel-sub {
+  font-size: var(--t-label);
+  font-weight: 400;
+  color: var(--text-3);
 }
 .strong {
   font-weight: 700;
@@ -173,31 +180,10 @@
   user-select: text;
 }
 
-/* ===== Category ======================================================== */
-.project {
-  padding: var(--s-3);
-}
-.project + .project {
-  border-top: 1px solid var(--stroke);
-}
-.project-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  margin: 0 0 var(--s-2);
-  font-size: var(--t-title);
-  font-weight: 620;
-  letter-spacing: -0.01em;
-}
-.project-name {
-  flex: 1;
-  color: var(--text-1);
-}
-
-/* Stage: how many of this category's platforms have finished. */
+/* Stage: how many of a category's platforms have finished. Board only. */
 .progress {
   flex: none;
-  width: 44px;
+  width: 40px;
   height: 3px;
   border-radius: var(--r-pill);
   background: var(--stroke-strong);
@@ -210,128 +196,184 @@
   background: var(--done);
   transition: width var(--morph) var(--ease);
 }
-.progress-num {
-  flex: none;
-  font-size: var(--t-micro);
-  font-weight: 500;
-  color: var(--text-3);
-  white-space: nowrap;
-}
 
-/* Platform marks: click one to land in that tool. */
-.platforms {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-1);
-  margin-bottom: 2px;
-}
-/* Labelled in the panel, bare on the island. A glyph you only see for a second
-   can be a symbol; a glyph you are reading has to say what it is. */
-.platform {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 7px 0 5px;
-  border-radius: var(--r-chip);
-  transition: background var(--dur-fast) var(--ease);
-}
-.platform-name {
-  font-size: var(--t-micro);
-  font-weight: 560;
-  color: var(--text-2);
-  letter-spacing: 0.01em;
-}
-.platform:hover {
-  background: var(--glass-hover);
-}
-.platform:active {
-  background: var(--glass-active);
-}
-
-/* ===== Needs you ======================================================= */
-/* The only rows that carry words. Everything else is a mark. */
-.need {
+/* ===== The arrival ===================================================== */
+/* Six seconds, then it demotes itself to a number. Nothing here is a decision
+   point: the Ask is already in the queue before this appears. */
+.arrival {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  margin-top: var(--s-2);
-  padding: 3px 3px 3px var(--s-2);
-  border-radius: var(--r-chip);
-  background: var(--glass-hover);
+  height: 100%;
+  padding: 0 var(--s-2) 0 var(--s-3);
 }
-.need-main {
+.arrival-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.arrival-body {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  gap: 1px;
   flex: 1;
   min-width: 0;
   text-align: left;
 }
-.need-app {
+.arrival-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.arrival-app {
+  font-size: var(--t-label);
+  font-weight: 680;
+  color: var(--text-1);
+}
+.arrival-reason {
+  font-size: var(--t-micro);
+  color: var(--text-2);
+}
+.arrival-task {
+  font-size: var(--t-label);
+  color: var(--text-3);
+}
+.arrival-body:hover .arrival-app {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.arrival-more {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--unread);
+  color: var(--unread-ink);
+  font-size: var(--t-label);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.arrival-more:hover {
+  opacity: 0.78;
+}
+
+/* ===== The queue ======================================================= */
+.queue {
+  margin: 0;
+  padding: var(--s-1) var(--s-2) var(--s-2);
+  list-style: none;
+}
+.ask {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 3px 3px 3px var(--s-2);
+  border-radius: var(--r-chip);
+}
+.ask + .ask {
+  margin-top: 2px;
+}
+.ask:hover {
+  background: var(--glass-hover);
+}
+/* Sat overnight. Marked by where it sits, never by fading: dimming measured
+   2.3:1 in light mode, and --text-2 has no headroom to give. */
+.queue-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-2) 0 var(--s-1);
+  padding: 0 var(--s-2);
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.queue-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--stroke);
+}
+.ask-main {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.ask-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.ask-text {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.ask-app {
   flex: none;
   font-size: var(--t-label);
   font-weight: 650;
   color: var(--text-1);
 }
-.need-task {
-  font-size: var(--t-label);
-  color: var(--text-2);
-}
-.need-main:hover .need-app {
+.ask-main:hover .ask-app {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.need-time {
+.ask-reason {
+  flex: none;
+  font-size: var(--t-micro);
+  color: var(--text-2);
+}
+.ask-project {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.ask-age {
   flex: none;
   font-size: var(--t-micro);
   color: var(--text-3);
 }
 
-/* ===== History ========================================================= */
-/* Finished categories, collapsed and grey. They are the record, not the work. */
-.history {
-  margin: var(--s-1) var(--s-3) var(--s-2);
+/* ===== The board (only when the queue is empty) ======================== */
+.board {
+  padding: var(--s-2) var(--s-3) var(--s-3);
 }
-.history-head {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  width: 100%;
-  height: 24px;
-  padding: 0 var(--s-1);
-  border-radius: var(--r-chip);
-  font-size: var(--t-label);
-  color: var(--text-3);
-  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
-}
-.history-head:hover {
-  color: var(--text-2);
-  background: var(--glass-hover);
-}
-.history-count {
-  font-size: var(--t-micro);
-  opacity: 0.8;
-}
-.history-row {
+.board-row {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  padding: 4px var(--s-1);
-  font-size: var(--t-label);
-  color: var(--text-3);
+  padding: 5px 0;
 }
-.history-marks {
+.board-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-label);
+  color: var(--text-1);
+}
+.board-marks {
   display: flex;
   align-items: center;
-  gap: var(--s-1);
-  margin-left: auto;
-  opacity: 0.7;
-}
-.history-num {
+  gap: 5px;
   flex: none;
+}
+.board-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.board-mark:hover {
+  background: var(--glass-hover);
+}
+.board-done {
+  margin: var(--s-2) 0 0;
   font-size: var(--t-micro);
-  min-width: 12px;
-  text-align: right;
+  color: var(--text-3);
 }

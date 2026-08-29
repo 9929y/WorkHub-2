@@ -1,33 +1,22 @@
-/** The island: 224x36, centred under the notch.
- *
- *  Collapsed it carries NO prose at all. One mark per platform, tinted by what
- *  that platform currently needs, plus a count of things waiting on you. That is
- *  the whole readout: which tools are working, and whether any of them is stuck.
- *
- *  Everything with words lives behind the click. */
+/** The island: the resting state. One mark per platform on live work, plus the
+ *  number of things waiting on you. No prose at all. */
 
 import { useHub } from "../lib/store";
 import * as api from "../lib/api";
-
 import { PlatformIcon } from "./PlatformIcon";
 
 export function Island() {
-  const { summary, serverError, toggleExpanded } = useHub();
-  const { platforms, needsYou } = summary;
+  const { summary, serverError, togglePanel } = useHub();
+  const { platforms, asks } = summary;
 
   return (
     <button
       className="island"
-      onClick={() => void toggleExpanded()}
-      aria-label={
-        needsYou > 0 ? `${needsYou} items need you. Open Workhub.` : "Nothing needs you. Open Workhub."
-      }
-      title={platforms.map((p) => `${p.sourceApp}: ${p.status}`).join("\n") || "No platforms reporting"}
+      onClick={() => void togglePanel()}
+      aria-label={asks > 0 ? `${asks} need you. Open Workhub.` : "Nothing needs you. Open Workhub."}
+      title={platforms.map((p) => `${p.sourceApp}: ${p.status}`).join("\n") || "Nothing reporting"}
     >
-      {/* The drag handle is a thin strip, not the whole island, so the island
-          itself stays clickable. */}
       <span className="island-grip" data-tauri-drag-region onMouseUp={() => void api.savePosition()} />
-
       <span className="island-marks">
         {serverError ? (
           <span className="island-dead" />
@@ -41,8 +30,7 @@ export function Island() {
           ))
         )}
       </span>
-
-      {needsYou > 0 ? <span className="island-count tnum">{needsYou}</span> : null}
+      {asks > 0 ? <span className="island-count tnum">{asks}</span> : null}
     </button>
   );
 }

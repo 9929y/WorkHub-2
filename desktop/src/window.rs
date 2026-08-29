@@ -6,9 +6,41 @@
 
 use tauri::{LogicalPosition, LogicalSize, Monitor, WebviewWindow};
 
+/// The three shapes the window takes.
+///
+/// `Alert` is the transient toast the island morphs into when an agent reports:
+/// wide enough for "which platform, what it needs", and nothing more.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Shape {
+    Island,
+    Alert,
+    Panel,
+}
+
+impl Shape {
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "alert" => Shape::Alert,
+            "panel" => Shape::Panel,
+            _ => Shape::Island,
+        }
+    }
+
+    pub fn size(self) -> (f64, f64) {
+        match self {
+            Shape::Island => ISLAND,
+            Shape::Alert => ALERT,
+            Shape::Panel => PANEL,
+        }
+    }
+}
+
 /// The island: a pill under the notch. Wide enough for a row of platform marks.
-pub const COLLAPSED: (f64, f64) = (224.0, 36.0);
-pub const EXPANDED: (f64, f64) = (360.0, 420.0);
+pub const ISLAND: (f64, f64) = (224.0, 36.0);
+/// The toast: one arrival, readable at a glance.
+pub const ALERT: (f64, f64) = (340.0, 62.0);
+/// The panel: the queue, or the status board when the queue is empty.
+pub const PANEL: (f64, f64) = (360.0, 420.0);
 
 /// Gap from the work-area edges.
 const MARGIN: f64 = 6.0;
@@ -118,24 +150,24 @@ pub fn set_panel_height(win: &WebviewWindow, height: f64) {
         .zip(win.outer_size().ok())
         .map(|(p, s)| (p.x as f64 / scale, p.y as f64 / scale, s.width as f64 / scale));
 
-    let _ = win.set_size(LogicalSize::new(EXPANDED.0, h));
+    let _ = win.set_size(LogicalSize::new(PANEL.0, h));
 
     if let Some((x, y, old_w)) = before {
         let centre = x + old_w / 2.0;
-        let new_x = (centre - EXPANDED.0 / 2.0).round();
+        let new_x = (centre - PANEL.0 / 2.0).round();
         let pos = match area_at(win, x, y).or_else(|| default_area(win)) {
-            Some(a) => clamp_into(a, new_x, y, EXPANDED.0, h),
+            Some(a) => clamp_into(a, new_x, y, PANEL.0, h),
             None => LogicalPosition::new(new_x, y),
         };
         let _ = win.set_position(pos);
     }
 }
 
-/// Resize between island and panel, keeping the **horizontal centre fixed** so the
-/// panel unfolds straight down from the island, the way a notch island does.
-/// Then clamp, so the taller panel cannot run off the bottom of the screen.
-pub fn set_expanded(win: &WebviewWindow, expanded: bool) {
-    let (w, h) = if expanded { EXPANDED } else { COLLAPSED };
+/// Resize to a shape, keeping the **horizontal centre fixed** so everything
+/// unfolds straight down from the island, the way a notch island does. Then
+/// clamp, so a taller shape cannot run off the bottom of the screen.
+pub fn set_shape(win: &WebviewWindow, shape: Shape) {
+    let (w, h) = shape.size();
 
     let scale = win.scale_factor().unwrap_or(2.0);
     let before = win

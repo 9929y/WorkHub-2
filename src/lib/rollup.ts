@@ -1,60 +1,98 @@
 /** Every derived value in the UI is computed here, once.
  *
- *  The product rule, stated once:
+ *  The product is built around one object: an **Ask** — the moment an agent
+ *  needs Yanice. Everything else is a level, and levels do not change what you
+ *  do in the next ten seconds:
  *
- *    running  the machine has the ball  -> icon only, never text
- *    done     nobody has the ball       -> fills the progress bar, never text
- *    blocked  YOU have the ball         -> needs you: decision
- *    waiting  YOU have the ball         -> needs you: review / sign-off
- *
- *  Only the last two ever produce a line of prose. If every finished task
- *  demanded a click this would be a to-do list again. */
+ *    running  the machine has the ball  -> a mark, never a line
+ *    done     nobody has the ball       -> fills the board, never a line
+ *    blocked  YOU have the ball         -> an Ask: needs a decision
+ *    waiting  YOU have the ball         -> an Ask: needs review
+ */
 
 import { type Event, type HubState, type Project, type Status, type Task, STATUS_SEVERITY } from "./types";
 
-/** A platform working on a project, and what it currently needs. */
 export interface Platform {
   sourceApp: string;
   status: Status;
-  /** Latest event from this platform, used for click-through and timing. */
   latest: Event | null;
 }
 
-export interface NeedsYou {
+export interface Ask {
+  id: string;
   task: Task;
   event: Event | null;
-  /** Two words, not a sentence. */
+  project: Project;
+  /** Two words. "Needs a decision" or "Needs review". */
   reason: string;
+  /** Raised before today: it has survived a night without being dealt with. */
+  stale: boolean;
 }
 
 export interface ProjectRollup {
   project: Project;
   status: Status;
   platforms: Platform[];
-  needsYou: NeedsYou[];
-  /** Stage = how many of this project's tracks have finished. */
   progress: { done: number; total: number };
-  /** Every track finished and nothing waiting: belongs in History, not the list. */
   isComplete: boolean;
 }
 
 export const needsAttention = (s: Status) => s === "blocked" || s === "waiting";
-export const isUnread = (e: Event) => !e.read && !e.dismissed;
 
 const byNewest = (a: { timestamp: string }, b: { timestamp: string }) =>
   b.timestamp.localeCompare(a.timestamp);
 
 const REASON: Record<string, string> = {
   blocked: "Needs a decision",
-  waiting: "Waiting on you",
+  waiting: "Needs review",
 };
 
+/** Local midnight. An Ask older than this has sat overnight and goes grey. */
+function startOfToday(now = Date.now()): number {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** The queue. Derived from live status, so it clears itself the moment an agent
+ *  reports progress: most Asks never need to be dismissed by hand. */
+export function collectAsks(state: HubState, now = Date.now()): Ask[] {
+  const midnight = startOfToday(now);
+  const projects = new Map(state.projects.map((p) => [p.id, p]));
+  const events = [...state.events].sort(byNewest);
+
+  return state.tasks
+    .filter((t) => needsAttention(t.status))
+    .map((t) => {
+      const project = projects.get(t.projectId);
+      if (!project) return null;
+      const event = events.find((e) => e.taskId === t.id) ?? null;
+      if (event?.dismissed) return null;
+      return {
+        id: t.id,
+        task: t,
+        event,
+        project,
+        reason: REASON[t.status] ?? "",
+        stale: new Date(t.updatedAt).getTime() < midnight,
+      };
+    })
+    .filter((a): a is Ask => a !== null)
+    .sort(
+      (a, b) =>
+        // Fresh above stale, then most urgent, then most recent.
+        Number(a.stale) - Number(b.stale) ||
+        STATUS_SEVERITY[b.task.status] - STATUS_SEVERITY[a.task.status] ||
+        b.task.updatedAt.localeCompare(a.task.updatedAt),
+    );
+}
+
+/** The status board, shown only when the queue is empty. */
 export function rollupProjects(state: HubState): ProjectRollup[] {
   const rollups = state.projects.map((project) => {
     const tasks = state.tasks.filter((t) => t.projectId === project.id);
     const events = state.events.filter((e) => e.projectId === project.id).sort(byNewest);
 
-    // One entry per platform, carrying its most recently updated track.
     const platforms: Platform[] = [];
     for (const t of [...tasks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))) {
       if (platforms.some((p) => p.sourceApp === t.sourceApp)) continue;
@@ -65,59 +103,35 @@ export function rollupProjects(state: HubState): ProjectRollup[] {
       });
     }
 
-    // The review queue: derived from live status, so it clears itself the moment
-    // an agent reports progress. A dismissed event suppresses its track, which
-    // is the escape hatch for work handled outside Workhub.
-    const needsYou = tasks
-      .filter((t) => needsAttention(t.status))
-      .map((t) => ({
-        task: t,
-        event: events.find((e) => e.taskId === t.id) ?? null,
-        reason: REASON[t.status] ?? "",
-      }))
-      .filter((n) => !n.event?.dismissed)
-      .sort(
-        (a, b) =>
-          STATUS_SEVERITY[b.task.status] - STATUS_SEVERITY[a.task.status] ||
-          b.task.updatedAt.localeCompare(a.task.updatedAt),
-      );
-
     let worst: Status = "done";
     for (const t of tasks) if (STATUS_SEVERITY[t.status] > STATUS_SEVERITY[worst]) worst = t.status;
-
     const done = tasks.filter((t) => t.status === "done").length;
+
     return {
       project,
       status: worst,
       platforms,
-      needsYou,
       progress: { done, total: tasks.length },
-      isComplete: tasks.length > 0 && done === tasks.length && needsYou.length === 0,
+      isComplete: tasks.length > 0 && done === tasks.length,
     };
   });
 
-  // Whatever needs you most, first.
   return rollups.sort(
     (a, b) =>
-      b.needsYou.length - a.needsYou.length ||
       STATUS_SEVERITY[b.status] - STATUS_SEVERITY[a.status] ||
       b.project.updatedAt.localeCompare(a.project.updatedAt),
   );
 }
 
 export interface HudSummary {
-  /** The only number the island shows. */
-  needsYou: number;
-  running: number;
-  /** Distinct platforms currently working or waiting, for the island's marks. */
+  /** The only number the island ever shows. */
+  asks: number;
+  fresh: number;
+  /** Distinct platforms on live work, for the island's marks. */
   platforms: Platform[];
-  /** The single most urgent thing, shown when the island is clicked open. */
-  top: { project: Project; item: NeedsYou } | null;
 }
 
-export function summarise(rollups: ProjectRollup[], state: HubState): HudSummary {
-  // Only platforms still on live work. A finished category's tools have nothing
-  // to say, and the island is the glance state: it should carry today's work.
+export function summarise(rollups: ProjectRollup[], asks: Ask[]): HudSummary {
   const platforms: Platform[] = [];
   for (const r of rollups) {
     if (r.isComplete) continue;
@@ -127,13 +141,7 @@ export function summarise(rollups: ProjectRollup[], state: HubState): HudSummary
       else if (STATUS_SEVERITY[p.status] > STATUS_SEVERITY[seen.status]) seen.status = p.status;
     }
   }
-  const first = rollups.find((r) => r.needsYou.length > 0);
-  return {
-    needsYou: rollups.reduce((n, r) => n + r.needsYou.length, 0),
-    running: state.tasks.filter((t) => t.status === "running").length,
-    platforms,
-    top: first ? { project: first.project, item: first.needsYou[0] } : null,
-  };
+  return { asks: asks.length, fresh: asks.filter((a) => !a.stale).length, platforms };
 }
 
 /** Compact relative time. The HUD never has room for a real timestamp. */

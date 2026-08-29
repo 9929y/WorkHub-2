@@ -29,7 +29,7 @@ pub fn run() {
             commands::set_read,
             commands::mark_all_read,
             commands::dismiss,
-            commands::set_panel_expanded,
+            commands::set_shape,
             commands::set_panel_height,
             commands::save_position,
             commands::reset_position,
@@ -71,8 +71,7 @@ fn setup_window(win: &WebviewWindow, ui: &model::UiState) {
     // duration of every collapse. A Dynamic Island is opaque anyway, so CSS owns
     // the whole surface and the blur follows the shape exactly.
 
-    let expanded = !ui.collapsed;
-    let (w, h) = if expanded { window::EXPANDED } else { window::COLLAPSED };
+    let (w, h) = if ui.collapsed { window::ISLAND } else { window::PANEL };
     let _ = win.set_size(tauri::LogicalSize::new(w, h));
     window::restore_position(win, ui.position, w, h);
 
@@ -116,7 +115,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                         .snapshot()
                         .map(|s| s.ui.collapsed)
                         .unwrap_or(true);
-                    let width = if collapsed { window::COLLAPSED.0 } else { window::EXPANDED.0 };
+                    let width = if collapsed { window::ISLAND.0 } else { window::PANEL.0 };
                     window::place_top_centre(&win, width);
                 }
                 "quit" => app.exit(0),

@@ -1,147 +1,171 @@
-/** App state: a snapshot of the backend plus a live subscription.
+/** App state and the shape lifecycle.
  *
- *  The backend is the only source of truth. Every mutation round-trips and the
- *  resulting `workhub://state` broadcast triggers a refetch, so the HUD can
- *  never drift from what an agent actually reported. */
+ *  Three shapes, one at a time:
+ *
+ *    island  the resting state: platform marks and a count
+ *    alert   an arrival, shown for ALERT_MS then demoted to the island
+ *    panel   the queue (or the status board, when the queue is empty)
+ *
+ *  An arrival never blocks: ignoring the alert costs nothing, because the Ask
+ *  is already in the queue before the alert is shown. */
 
 import { listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import * as api from "./api";
-import { rollupProjects, summarise, type HudSummary, type ProjectRollup } from "./rollup";
+import { collectAsks, rollupProjects, summarise, type Ask, type HudSummary, type ProjectRollup } from "./rollup";
 import type { HubState, ServerInfo } from "./types";
 
 /** Must match --morph / --morph-out in tokens.css. */
 const MORPH_MS = 260;
-/** Exit is deliberately faster than enter, so dismissing never feels sluggish. */
 const MORPH_OUT_MS = 170;
-
-/** Pending window-shrink, so re-opening mid-collapse can cancel it. */
-let shrinkTimer: number | undefined;
+/** How long an arrival stays up before demoting itself to a count. */
+const ALERT_MS = 6000;
 /** Must match PANEL_MIN_H / PANEL_MAX_H in desktop/src/window.rs. */
 const PANEL_MIN_H = 96;
 const PANEL_MAX_H = 520;
 const PANEL_FALLBACK_H = 260;
 
-const EMPTY: HubState = {
-  projects: [],
-  tasks: [],
-  events: [],
-  ui: { position: null, collapsed: true },
-};
+export type Shape = "island" | "alert" | "panel";
+
+const EMPTY: HubState = { projects: [], tasks: [], events: [], ui: { position: null, collapsed: true } };
+
+let shrinkTimer: number | undefined;
+let alertTimer: number | undefined;
 
 interface HubStore {
   state: HubState;
+  asks: Ask[];
   rollups: ProjectRollup[];
   summary: HudSummary;
   server: ServerInfo | null;
   serverError: string | null;
-  expanded: boolean;
+  shape: Shape;
+  /** The Ask currently being announced, if any. */
+  alert: Ask | null;
   loaded: boolean;
-  /** Measured content height of the panel; the island sizes itself to it. */
   panelHeight: number;
-  /** Bumped every minute so relative timestamps stay honest. */
-  tick: number;
 
-  refresh: () => Promise<void>;
+  refresh: (arrivedEventId?: string | null) => Promise<void>;
   init: () => Promise<() => void>;
-  setExpanded: (expanded: boolean) => Promise<void>;
-  toggleExpanded: () => Promise<void>;
-  /** Called by the panel once it knows how tall its content is. */
+  setShape: (shape: Shape) => Promise<void>;
+  togglePanel: () => Promise<void>;
+  dismissAlert: () => void;
   fitPanel: (height: number) => void;
 }
 
 export const useHub = create<HubStore>((set, get) => ({
   state: EMPTY,
+  asks: [],
   rollups: [],
-  summary: { needsYou: 0, running: 0, platforms: [], top: null },
+  summary: { asks: 0, fresh: 0, platforms: [] },
   server: null,
   serverError: null,
-  expanded: false,
+  shape: "island",
+  alert: null,
   loaded: false,
   panelHeight: PANEL_FALLBACK_H,
-  tick: 0,
 
-  refresh: async () => {
+  refresh: async (arrivedEventId) => {
     const state = await api.getState();
+    const asks = collectAsks(state);
     const rollups = rollupProjects(state);
-    set({ state, rollups, summary: summarise(rollups, state), loaded: true });
+    set({ state, asks, rollups, summary: summarise(rollups, asks), loaded: true });
+
+    if (!arrivedEventId) return;
+    // Announce only if what arrived actually needs Yanice, and only when we are
+    // not already showing the queue: interrupting an open panel is pointless.
+    const arrived = asks.find((a) => a.event?.id === arrivedEventId);
+    if (!arrived || get().shape === "panel") return;
+    void get().setShape("alert");
+    set({ alert: arrived });
+    if (alertTimer !== undefined) window.clearTimeout(alertTimer);
+    alertTimer = window.setTimeout(() => get().dismissAlert(), ALERT_MS);
   },
 
   init: async () => {
     await get().refresh();
+    set({ shape: get().state.ui.collapsed ? "island" : "panel" });
 
-    // Restore the mode the HUD was last left in.
-    const collapsed = get().state.ui.collapsed;
-    set({ expanded: !collapsed });
-
-    const unlistenState = await listen("workhub://state", () => {
-      void get().refresh();
+    const unlistenState = await listen<string | null>("workhub://state", (e) => {
+      void get().refresh(e.payload);
     });
-    const unlistenError = await listen<string>("workhub://server-error", (e) => {
-      set({ serverError: e.payload });
-    });
-
+    const unlistenError = await listen<string>("workhub://server-error", (e) =>
+      set({ serverError: e.payload }),
+    );
     api.serverInfo().then((server) => set({ server })).catch(() => {});
 
-    const timer = window.setInterval(() => set({ tick: get().tick + 1 }), 60_000);
+    // Recompute staleness across midnight without a reload.
+    const timer = window.setInterval(() => void get().refresh(), 60_000);
 
     return () => {
       unlistenState();
       unlistenError();
       window.clearInterval(timer);
+      if (alertTimer !== undefined) window.clearTimeout(alertTimer);
+      if (shrinkTimer !== undefined) window.clearTimeout(shrinkTimer);
     };
   },
 
-  setExpanded: async (expanded) => {
-    // The island morphs in CSS; the native window only has to be big enough to
-    // contain the animation. So grow before animating, and shrink after.
-    // Re-opening mid-collapse must cancel the pending shrink. Without this the
-    // window snaps back to island size while the panel is on screen, clipping it.
+  setShape: async (shape) => {
+    // Re-opening mid-collapse must cancel the pending shrink, or the window
+    // snaps back to island size while a larger shape is on screen.
     if (shrinkTimer !== undefined) {
       window.clearTimeout(shrinkTimer);
       shrinkTimer = undefined;
     }
+    if (shape !== "alert" && alertTimer !== undefined) {
+      window.clearTimeout(alertTimer);
+      alertTimer = undefined;
+      set({ alert: null });
+    }
 
-    if (expanded) {
-      // Grow the window to the ceiling first so the morph has room; `fitPanel`
-      // shrinks it to the real content height once the panel has rendered.
-      await api.setPanelExpanded(true);
-      set({ expanded: true });
+    const prev = get().shape;
+    if (shape === prev) return;
+
+    // Growing: resize first so the CSS morph has room. Shrinking: let the morph
+    // finish, then pull the window in around it.
+    const order = { island: 0, alert: 1, panel: 2 } as const;
+    if (order[shape] >= order[prev]) {
+      await api.setShape(shape);
+      set({ shape });
       return;
     }
-    set({ expanded: false });
+    set({ shape });
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     shrinkTimer = window.setTimeout(() => {
       shrinkTimer = undefined;
-      // Guard again: the state can have flipped back while we waited.
-      if (!useHub.getState().expanded) void api.setPanelExpanded(false);
+      if (useHub.getState().shape === shape) void api.setShape(shape);
     }, reduced ? 0 : MORPH_OUT_MS);
   },
 
-  toggleExpanded: async () => {
-    await get().setExpanded(!get().expanded);
+  togglePanel: async () => {
+    await get().setShape(get().shape === "panel" ? "island" : "panel");
+  },
+
+  dismissAlert: () => {
+    if (alertTimer !== undefined) {
+      window.clearTimeout(alertTimer);
+      alertTimer = undefined;
+    }
+    set({ alert: null });
+    if (get().shape === "alert") void get().setShape("island");
   },
 
   fitPanel: (height) => {
     const h = Math.round(Math.min(Math.max(height, PANEL_MIN_H), PANEL_MAX_H));
-    // Ignore sub-pixel churn, which would otherwise ping-pong with the observer.
     if (Math.abs(h - get().panelHeight) < 2) return;
     set({ panelHeight: h });
-    if (!get().expanded) return;
-    // Let the CSS morph land before the window shrinks around it, or the
-    // animation gets clipped by the window edge.
+    if (get().shape !== "panel") return;
     window.setTimeout(() => {
-      if (useHub.getState().expanded) void api.setPanelHeight(h);
+      if (useHub.getState().shape === "panel") void api.setPanelHeight(h);
     }, MORPH_MS);
   },
 }));
 
-/** Mutations. Each awaits the backend, then leans on the broadcast to refresh. */
 export const actions = {
-  /** Suppress an item handled outside Workhub. The queue is otherwise derived
-   *  from live status and clears itself when an agent reports progress. */
+  /** Suppress an Ask handled outside Workhub. Rarely needed: the queue clears
+   *  itself when an agent reports progress. */
   dismiss: (eventId: string) => api.dismiss(eventId),
-  markAllRead: (projectId?: string) => api.markAllRead(projectId),
-  /** Jump into the tool that reported this. */
+  /** Jump into the tool that raised the Ask. */
   open: (sourceApp: string, url?: string | null) => api.openTarget(sourceApp, url),
 };

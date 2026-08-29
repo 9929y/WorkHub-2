@@ -1,15 +1,13 @@
 import { useEffect } from "react";
 import { useHub } from "./lib/store";
+import { Arrival } from "./components/Arrival";
 import { Island } from "./components/Island";
 import { Panel } from "./components/Panel";
 
 export default function App() {
-  const { expanded, loaded, panelHeight, init } = useHub();
+  const { shape, loaded, panelHeight, init } = useHub();
 
   useEffect(() => {
-    // `init` is async, so StrictMode's double-invoke can run cleanup before the
-    // first call has handed back its disposer. The flag makes the late disposer
-    // fire immediately instead of leaking a duplicate listener.
     let cancelled = false;
     let dispose: (() => void) | undefined;
     void init().then((fn) => {
@@ -22,15 +20,11 @@ export default function App() {
     };
   }, [init]);
 
-  // One element morphs between the two states. The native window is only ever
-  // resized to make room; the animation itself is CSS, which is the only way to
-  // get a spring out of a resize the window server does instantly.
+  // One element morphs between all three shapes. The native window is only
+  // resized to make room; the spring itself is CSS.
   return (
-    <div
-      className={`morph ${expanded ? "is-panel" : "is-island"}`}
-      style={expanded ? { height: panelHeight } : undefined}
-    >
-      {loaded ? (expanded ? <Panel /> : <Island />) : null}
+    <div className={`morph is-${shape}`} style={shape === "panel" ? { height: panelHeight } : undefined}>
+      {loaded ? shape === "panel" ? <Panel /> : shape === "alert" ? <Arrival /> : <Island /> : null}
     </div>
   );
 }

@@ -10,17 +10,50 @@ on *you*.
 
 ### The one rule
 
+**Workhub does not display state. It catches the moment state changes into "needs a
+human".** A level ("Codex is running") never changes what you do in the next ten
+seconds; an edge ("Codex just stopped and needs you") is the entire product.
+
 Status is about who has the ball:
 
 | status | who has the ball | shown as |
 |---|---|---|
 | `running` | the machine | a mark. Never words. |
-| `done` | nobody | fills the progress bar. A category with everything done drops into **History**, collapsed and grey. |
-| `blocked` | **you** | a line: needs a decision |
-| `waiting` | **you** | a line: waiting on you |
+| `done` | nobody | fills the board. Never words. |
+| `blocked` | **you** | an **Ask**: needs a decision |
+| `waiting` | **you** | an **Ask**: needs review |
 
-Only the bottom two ever produce text. If every finished task demanded a click, this
-would be a todo list again.
+Only the bottom two ever produce a line of prose.
+
+### Three shapes
+
+| shape | size | when |
+|---|---|---|
+| **island** | 224×36 | resting. Platform marks and a count. No prose at all. |
+| **arrival** | 340×62 | an agent just raised an Ask. Six seconds, then it demotes itself. |
+| **panel** | 360×auto | you clicked. |
+
+The arrival never blocks: the Ask is already in the queue before it appears, so
+ignoring it costs nothing.
+
+### The panel has two forms
+
+This is what resolves "I want progress and platforms" against "it is too heavy":
+
+- **Asks pending → the panel is a queue, and nothing else.** You are acting.
+- **Queue empty → the panel is the status board**: progress, who is working. You are
+  browsing, so levels finally earn their place.
+
+### How an Ask settles
+
+Three ways, and two of them need nothing from you:
+
+1. **Answered** — an agent reports progress on the same task, and the Ask leaves the
+   queue by itself. This is the normal path.
+2. **Overnight** — an Ask raised before today drops below an *Earlier* divider. It is
+   marked by **position, not by fading**: dimming these rows measured 2.3:1 in light
+   mode, and the tertiary text ramp has no headroom to give.
+3. **Dismissed** — the escape hatch for work you handled outside Workhub.
 
 ```
         ▁▁▁▁▁▁▁▁         ← the notch

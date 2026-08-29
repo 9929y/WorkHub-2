@@ -64,6 +64,15 @@ body {
 }
 
 /* Expanded: a themed, translucent panel. */
+/* The arrival: an island stretched just far enough to be read. */
+.morph.is-alert {
+  width: 340px;
+  height: 62px;
+  border-radius: 20px;
+  background: var(--island-bg);
+  box-shadow: inset 0 0 0 1px var(--stroke), 0 4px 18px rgba(0, 0, 0, 0.22);
+}
+
 .morph.is-panel {
   width: 360px;
   /* height is set inline from the measured content; see App.tsx */
@@ -158,6 +167,13 @@ button {
   width: 20px;
   padding: 0;
   justify-content: center;
+}
+/* Present but unobtrusive until pointed at. */
+.btn.quiet {
+  color: var(--text-3);
+}
+.btn.quiet:hover {
+  color: var(--text-1);
 }
 
 /* Text actions. Quieter than a button, which is all an alert needs. */

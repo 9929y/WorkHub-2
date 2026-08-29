@@ -8,7 +8,7 @@ import { PlatformIcon } from "./PlatformIcon";
 import { StatusDot } from "./StatusDot";
 
 export function Arrival() {
-  const { alert, dismissAlert, setShape } = useHub();
+  const { alert, summary, dismissAlert, setShape } = useHub();
   if (!alert) return null;
 
   return (
@@ -39,7 +39,7 @@ export function Arrival() {
         aria-label="Open the queue"
         title="Open the queue"
       >
-        {useHub.getState().summary.asks}
+        {summary.asks}
       </button>
     </div>
   );

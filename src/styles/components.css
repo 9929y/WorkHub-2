@@ -45,6 +45,8 @@
   background: var(--island-bg);
   border-radius: var(--r-pill);
   color: var(--island-ink);
+  /* A light pill on a light desktop needs an edge to exist at all. */
+  box-shadow: inset 0 0 0 1px var(--stroke), 0 2px 10px rgba(0, 0, 0, 0.18);
   transition: transform var(--dur-fast) var(--ease);
 }
 .island:active {
@@ -108,8 +110,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: var(--r-pill);
-  background: var(--island-ink);
-  color: var(--island-bg);
+  background: var(--unread);
+  color: var(--unread-ink);
   font-size: var(--t-label);
   font-weight: 700;
   line-height: 18px;
@@ -213,21 +215,33 @@
   font-size: var(--t-micro);
   font-weight: 500;
   color: var(--text-3);
+  white-space: nowrap;
 }
 
 /* Platform marks: click one to land in that tool. */
 .platforms {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--s-2);
+  gap: var(--s-1);
+  margin-bottom: 2px;
 }
+/* Labelled in the panel, bare on the island. A glyph you only see for a second
+   can be a symbol; a glyph you are reading has to say what it is. */
 .platform {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 7px 0 5px;
   border-radius: var(--r-chip);
   transition: background var(--dur-fast) var(--ease);
+}
+.platform-name {
+  font-size: var(--t-micro);
+  font-weight: 560;
+  color: var(--text-2);
+  letter-spacing: 0.01em;
 }
 .platform:hover {
   background: var(--glass-hover);
@@ -249,28 +263,75 @@
 }
 .need-main {
   display: flex;
-  align-items: baseline;
-  gap: var(--s-2);
+  align-items: center;
+  gap: 5px;
   flex: 1;
   min-width: 0;
   text-align: left;
 }
-.need-task {
+.need-app {
+  flex: none;
   font-size: var(--t-label);
-  font-weight: 600;
+  font-weight: 650;
   color: var(--text-1);
 }
-.need-main:hover .need-task {
+.need-task {
+  font-size: var(--t-label);
+  color: var(--text-2);
+}
+.need-main:hover .need-app {
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-.need-reason {
-  flex: none;
-  font-size: var(--t-micro);
-  color: var(--text-2);
 }
 .need-time {
   flex: none;
   font-size: var(--t-micro);
   color: var(--text-3);
+}
+
+/* ===== History ========================================================= */
+/* Finished categories, collapsed and grey. They are the record, not the work. */
+.history {
+  margin: var(--s-1) var(--s-3) var(--s-2);
+}
+.history-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 24px;
+  padding: 0 var(--s-1);
+  border-radius: var(--r-chip);
+  font-size: var(--t-label);
+  color: var(--text-3);
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.history-head:hover {
+  color: var(--text-2);
+  background: var(--glass-hover);
+}
+.history-count {
+  font-size: var(--t-micro);
+  opacity: 0.8;
+}
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 4px var(--s-1);
+  font-size: var(--t-label);
+  color: var(--text-3);
+}
+.history-marks {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-left: auto;
+  opacity: 0.7;
+}
+.history-num {
+  flex: none;
+  font-size: var(--t-micro);
+  min-width: 12px;
+  text-align: right;
 }

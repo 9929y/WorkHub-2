@@ -36,11 +36,6 @@
   --morph: 260ms;
   --spring: cubic-bezier(0.34, 1.32, 0.36, 1);
 
-  /* --- The island is always black, in both themes. --------------------- */
-  /* It stands in for the notch, and the notch does not change colour. */
-  --island-bg: #0a0a0c;
-  --island-ink: rgba(255, 255, 255, 0.95);
-  --island-ink-2: rgba(255, 255, 255, 0.6);
 }
 
 /* ===== Dark (default) ================================================== */
@@ -67,6 +62,12 @@
   /* Unread is NOT a status: neutral so it can never read as `blocked`. */
   --unread: rgba(255, 255, 255, 0.92);
   --unread-ink: #16171a;
+
+  /* The island uses the same surface as the panel: one theme, one look. An
+   * island that stayed black while the panel went light read as two apps. */
+  --island-bg: rgba(18, 19, 22, 0.96);
+  --island-ink: var(--text-1);
+  --island-ink-2: var(--text-3);
 }
 
 /* ===== Light =========================================================== */
@@ -98,6 +99,10 @@
 
     --unread: rgba(0, 0, 0, 0.82);
     --unread-ink: #ffffff;
+
+    --island-bg: rgba(252, 252, 253, 0.97);
+    --island-ink: var(--text-1);
+    --island-ink-2: var(--text-3);
   }
 }
 

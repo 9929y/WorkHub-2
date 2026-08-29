@@ -1,8 +1,8 @@
-/** One category: its name, how far along it is, which platforms are on it, and
- *  only the items that need you.
+/** One category: how far along it is, which platforms are on it, and only the
+ *  items that need you.
  *
- *  A project with nothing blocked or waiting shows no prose whatsoever: just a
- *  name, a progress bar and a row of marks. */
+ *  Platform marks carry their name here. In the island a bare mark is right,
+ *  because you are glancing; in the panel an unlabelled glyph is just a riddle. */
 
 import { actions } from "../lib/store";
 import { ago } from "../lib/rollup";
@@ -23,26 +23,28 @@ export function ProjectRow({ rollup }: { rollup: ProjectRollup }) {
           className="progress"
           role="img"
           aria-label={`${progress.done} of ${progress.total} platforms finished`}
-          title={`${progress.done}/${progress.total} finished`}
         >
           <span className="progress-fill" style={{ width: `${pct}%` }} />
         </span>
-        <span className="progress-num tnum">
-          {progress.done}/{progress.total}
+        {/* "1/3" alone reads as a riddle; say what it counts. */}
+        <span className="progress-num">
+          <span className="tnum">
+            {progress.done}/{progress.total}
+          </span>{" "}
+          done
         </span>
       </h2>
 
-      {/* Click a mark to land in that tool. */}
       <div className="platforms">
         {platforms.map((p) => (
           <button
             key={p.sourceApp}
             className={`platform mark-${p.status}`}
             onClick={() => void actions.open(p.sourceApp, p.latest?.url)}
-            aria-label={`Open ${p.sourceApp} (${p.status})`}
-            title={`Open ${p.sourceApp} — ${p.status}`}
+            title={`Open ${p.sourceApp} (${p.status})`}
           >
-            <PlatformIcon sourceApp={p.sourceApp} size={17} />
+            <PlatformIcon sourceApp={p.sourceApp} size={14} />
+            <span className="platform-name">{p.sourceApp}</span>
           </button>
         ))}
       </div>
@@ -53,10 +55,12 @@ export function ProjectRow({ rollup }: { rollup: ProjectRollup }) {
           <button
             className="need-main"
             onClick={() => void actions.open(n.task.sourceApp, n.event?.url)}
-            title={n.event?.summary || n.task.name}
+            title={`${n.reason}. Open ${n.task.sourceApp}.${n.event?.summary ? `\n\n${n.event.summary}` : ""}`}
           >
+            {/* Which platform is asking is the first thing you need to know. */}
+            <PlatformIcon sourceApp={n.task.sourceApp} size={13} />
+            <span className="need-app">{n.task.sourceApp}</span>
             <span className="need-task truncate">{n.task.name}</span>
-            <span className="need-reason">{n.reason}</span>
           </button>
           <span className="need-time tnum">{ago(n.task.updatedAt)}</span>
           {n.event ? (

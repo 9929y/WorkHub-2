@@ -4,20 +4,25 @@ import { useLayoutEffect, useRef } from "react";
 import { useHub } from "../lib/store";
 import * as api from "../lib/api";
 import { ChevronUp } from "./Icons";
+import { History } from "./History";
 import { ProjectRow } from "./ProjectRow";
 
 export function Panel() {
   const { rollups, summary, serverError, toggleExpanded, fitPanel } = useHub();
+  const active = rollups.filter((r) => !r.isComplete);
+  const complete = rollups.filter((r) => r.isComplete);
 
   // Measure the content so the island can size itself to it. Without this the
   // window sits over the desktop as a transparent slab that swallows clicks.
-  const body = useRef<HTMLDivElement>(null);
+  // Measure the CONTENT, never the scroll container. The container is flex:1 and
+  // therefore already stretched to the window, so measuring it just reports the
+  // height we are trying to compute and the panel never shrinks.
+  const content = useRef<HTMLDivElement>(null);
   const head = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
-    const el = body.current;
+    const el = content.current;
     if (!el) return;
-    const measure = () =>
-      fitPanel((head.current?.offsetHeight ?? 34) + el.scrollHeight + 2);
+    const measure = () => fitPanel((head.current?.offsetHeight ?? 34) + el.offsetHeight + 2);
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -44,14 +49,23 @@ export function Panel() {
 
       {serverError ? <p className="banner">{serverError}</p> : null}
 
-      <div className="scroll panel-scroll" ref={body}>
-        {rollups.length === 0 ? (
-          <p className="empty">
-            Nothing reporting yet. POST to <code>localhost:8787/events</code>.
-          </p>
-        ) : (
-          rollups.map((r) => <ProjectRow key={r.project.id} rollup={r} />)
-        )}
+      <div className="scroll panel-scroll">
+        {/* This inner wrapper is what gets measured: it is the natural height of
+            the content, unlike the scroll container above it. */}
+        <div className="panel-content" ref={content}>
+          {rollups.length === 0 ? (
+            <p className="empty">
+              Nothing reporting yet. POST to <code>localhost:8787/events</code>.
+            </p>
+          ) : (
+            <>
+              {active.map((r) => (
+                <ProjectRow key={r.project.id} rollup={r} />
+              ))}
+              <History items={complete} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

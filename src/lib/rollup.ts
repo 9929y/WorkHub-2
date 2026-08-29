@@ -34,6 +34,8 @@ export interface ProjectRollup {
   needsYou: NeedsYou[];
   /** Stage = how many of this project's tracks have finished. */
   progress: { done: number; total: number };
+  /** Every track finished and nothing waiting: belongs in History, not the list. */
+  isComplete: boolean;
 }
 
 export const needsAttention = (s: Status) => s === "blocked" || s === "waiting";
@@ -83,12 +85,14 @@ export function rollupProjects(state: HubState): ProjectRollup[] {
     let worst: Status = "done";
     for (const t of tasks) if (STATUS_SEVERITY[t.status] > STATUS_SEVERITY[worst]) worst = t.status;
 
+    const done = tasks.filter((t) => t.status === "done").length;
     return {
       project,
       status: worst,
       platforms,
       needsYou,
-      progress: { done: tasks.filter((t) => t.status === "done").length, total: tasks.length },
+      progress: { done, total: tasks.length },
+      isComplete: tasks.length > 0 && done === tasks.length && needsYou.length === 0,
     };
   });
 
@@ -112,8 +116,11 @@ export interface HudSummary {
 }
 
 export function summarise(rollups: ProjectRollup[], state: HubState): HudSummary {
+  // Only platforms still on live work. A finished category's tools have nothing
+  // to say, and the island is the glance state: it should carry today's work.
   const platforms: Platform[] = [];
   for (const r of rollups) {
+    if (r.isComplete) continue;
     for (const p of r.platforms) {
       const seen = platforms.find((x) => x.sourceApp === p.sourceApp);
       if (!seen) platforms.push(p);

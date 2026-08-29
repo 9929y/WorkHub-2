@@ -15,7 +15,7 @@ Status is about who has the ball:
 | status | who has the ball | shown as |
 |---|---|---|
 | `running` | the machine | a mark. Never words. |
-| `done` | nobody | fills the progress bar. Never words. |
+| `done` | nobody | fills the progress bar. A category with everything done drops into **History**, collapsed and grey. |
 | `blocked` | **you** | a line: needs a decision |
 | `waiting` | **you** | a line: waiting on you |
 
@@ -30,11 +30,16 @@ would be a todo list again.
             ↓ click
  ╭────────────────────────╮
  │ 2 need you          ⌃  │
- │ AtlasNova Brand Kit 2/4│
- │  ➤ >_ ◐ ☁              │
- │  ✕ Debug tokens        │
- │      Needs a decision  │
+ │ AtlasNova Brand Kit    │
+ │              ▰▱▱ 1/3 done│
+ │  >_ Codex  ➤ Cursor    │
+ │  ✕ Cursor  Debug tokens│
+ │  ○ Figma   Design review│
+ │ History  2          ⌄  │
  ╰────────────────────────╯
+
+Marks are bare on the island and **labelled in the panel**: a glyph you see for a
+second can be a symbol, but a glyph you are reading has to say what it is.
 ```
 
 ---
@@ -206,8 +211,8 @@ These are real MVP constraints, not TODOs I forgot:
 5. **The release build is unsigned.** On first open macOS Gatekeeper will object;
    right-click → Open, or sign it with your own certificate.
 6. **Light and dark follow the macOS system appearance**, with no control in the UI.
-   The *island* stays black in both, because it stands in for the notch and the notch
-   does not change colour; the expanded panel is themed. Type is 10–14 px by design.
+   The island and the panel share one surface: an island that stayed black while the
+   panel went light read as two different apps. Type is 10–14 px by design.
 7. **The island sits below the menu bar, not over the notch.** Drawing above the menu
    bar needs a status-level window and would cover the very thing the notch lives in.
 8. **No native vibrancy.** `NSVisualEffectView` fills the *window*, but the island

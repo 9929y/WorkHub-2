@@ -1,3 +1,5 @@
+allowBuilds:
+  esbuild: set this to true or false
 # pnpm 11 reads project settings from this file (they moved out of package.json).
 onlyBuiltDependencies:
   - esbuild

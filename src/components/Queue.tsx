@@ -31,21 +31,27 @@ export function Queue({ asks }: { asks: Ask[] }) {
           <button
             className="ask-main"
             onClick={() => void actions.open(a.task.sourceApp, a.event?.url)}
-            title={`${a.task.name}\n${a.reason}. Click to open ${a.task.sourceApp}.${
-              a.event?.summary ? `\n\n${a.event.summary}` : ""
-            }`}
+            title={`${a.reason} · ${a.project.name}\n\n${a.detail}\n\nClick to open ${a.task.sourceApp}.`}
           >
-            <StatusDot status={a.task.status} size={10} />
-            <span className={`ask-mark mark-${a.task.status}`}>
+            <span className="ask-logo">
               <PlatformIcon sourceApp={a.task.sourceApp} size={15} />
             </span>
             <span className="ask-text">
-              <span className="ask-app">{a.task.sourceApp}</span>
-              <span className="ask-reason">{a.reason}</span>
-              {showProject ? <span className="ask-project truncate">{a.project.name}</span> : null}
+              <span className="ask-top">
+                <StatusDot status={a.task.status} size={9} />
+                <span className="ask-app">{a.task.sourceApp}</span>
+                {showProject ? (
+                  <>
+                    <span className="ask-sep">·</span>
+                    <span className="ask-project truncate">{a.project.name}</span>
+                  </>
+                ) : null}
+                <span className="ask-age tnum">{ago(a.task.updatedAt)}</span>
+              </span>
+              {/* What it is actually asking. Without this the row says nothing. */}
+              <span className="ask-detail truncate">{a.detail}</span>
             </span>
           </button>
-          <span className="ask-age tnum">{ago(a.task.updatedAt)}</span>
           {a.event ? (
             <button
               className="btn icon quiet"

@@ -44,6 +44,10 @@ body {
   overflow: hidden;
   transform: translateX(-50%);
   will-change: width, height;
+  /* Glassmorphism: blur 10-20px with saturation lift, so what shows through
+     reads as refracted rather than merely dimmed. */
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
   transition:
     width var(--morph) var(--spring),
     height var(--morph) var(--spring),
@@ -67,38 +71,58 @@ body {
 /* The arrival: an island stretched just far enough to be read. */
 .morph.is-alert {
   width: 340px;
-  height: 62px;
-  border-radius: 20px;
+  height: 78px;
+  border-radius: 22px;
   background: var(--island-bg);
-  box-shadow: inset 0 0 0 1px var(--stroke), 0 4px 18px rgba(0, 0, 0, 0.22);
 }
 
 .morph.is-panel {
   width: 360px;
   /* height is set inline from the measured content; see App.tsx */
-  border-radius: 22px;
+  border-radius: 24px;
   background: var(--glass-base);
-  box-shadow: inset 0 0 0 1px var(--stroke);
-  /* Progressive enhancement only. The surface is 93-95% opaque, so if the
-     compositor declines to blur, nothing about legibility changes. */
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
 }
 
-/* Content cross-fades slightly behind the size change, so the shape leads and
-   the words follow. Without this the panel text appears in a pill-sized box. */
+/* Lensing. A rim that is bright on top and dark below, plus a specular
+   highlight along the top edge: the way light actually behaves at the edge of a
+   piece of glass. This carries the material, because the tint cannot. */
+.morph {
+  box-shadow:
+    inset 0 1px 0 0 var(--rim-top),
+    inset 0 0 0 1px var(--stroke),
+    inset 0 -1px 0 0 var(--rim-bottom),
+    0 4px 20px rgba(0, 0, 0, 0.22);
+}
+/* The specular sits in the top 8px only, above every line of text.
+   A wash over the content area measured 2.97:1 on the blocked red in dark mode:
+   lensing concentrates at the edge in the real world, and it has to here too. */
+.morph::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--specular), transparent);
+  opacity: 0.5;
+}
+
+/* Content follows the shape rather than arriving with it: the box opens, then
+   the words land. Transform and opacity only, so it stays off the layout path. */
 .morph > * {
-  animation: contents var(--morph) var(--ease) both;
+  animation: contents var(--dur-enter) var(--ease-out) both;
 }
 @keyframes contents {
   from {
     opacity: 0;
+    transform: translateY(-4px);
   }
-  60% {
+  55% {
     opacity: 0;
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 

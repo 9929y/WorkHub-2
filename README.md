@@ -71,8 +71,15 @@ Three ways, and two of them need nothing from you:
  │ History  2          ⌄  │
  ╰────────────────────────╯
 
-Marks are bare on the island and **labelled in the panel**: a glyph you see for a
-second can be a symbol, but a glyph you are reading has to say what it is.
+Marks are the products' **own logos**, from `simple-icons`, rendered monochrome in the
+current text colour. Brand colour is unusable here: Cursor's is `#000000` and GitHub's
+is `#181717`, both invisible on a dark panel, so recognition comes from the shape.
+OpenAI is the exception: that mark was withdrawn from `simple-icons` at OpenAI's
+request, so Codex falls back to a lettermark rather than an invented logo.
+
+**Every Ask says what it is about.** Which platform, which project, and the agent's own
+summary. "Cursor needs a decision" on its own is not actionable, and an earlier version
+shipped exactly that.
 ```
 
 ---
@@ -302,7 +309,8 @@ All colour, spacing, radius and type live in
 | Surfaces | `rgba(22,23,26,0.62)` base · `rgba(38,40,45,0.55)` raised — tint only, blur is native |
 | Text | three levels per theme; every pair measured, see below |
 | Status | running `#4A9EFF` · done `#35C17E` · blocked `#FF5F56` · waiting `#F0A83C` |
-| Radii | 12 px window · 8 px chip. There are no cards. |
+| Radii | pill island · 22–24 px panel · 8 px chip. There are no cards. |
+| Glass | blur 18px + saturate 180%, with the highlight at the **edge**, not over content |
 | Motion | 120 ms, honours `prefers-reduced-motion` |
 
 **Status is carried by shape first, hue second.** The palette spans the red/green
@@ -331,6 +339,17 @@ translucent panel's background depends on what is behind it:
 Light mode is not the dark palette inverted: it needs a more opaque tint, because dark
 text over a light translucent panel loses contrast far faster as the wallpaper darkens,
 and darker status hues, because the dark-mode hues fail outright on a light surface.
+
+**Why the glass is not 15% opaque.** Glassmorphism's spec calls for 15–30%. Measured
+over an arbitrary wallpaper that puts the blocked red at **1.01:1**, and blur does not
+rescue it: blur destroys the wallpaper's detail but preserves its average luminance. The
+AA floor is a tint of 0.89 (dark) and 0.93 (light), so the material reads through
+**lensing** instead — a bright rim, a dark lower edge, a specular highlight in the top
+8px, and the morph. A specular *wash* over the content area was tried and measured
+2.97:1 on the blocked red; real lensing concentrates at the edge anyway.
+
+`prefers-reduced-transparency` drops the blur and goes fully opaque, as Liquid Glass's
+own checklist requires.
 
 ---
 

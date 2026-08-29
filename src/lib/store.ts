@@ -31,6 +31,11 @@ const EMPTY: HubState = { projects: [], tasks: [], events: [], ui: { position: n
 
 let shrinkTimer: number | undefined;
 let alertTimer: number | undefined;
+/** Set only when the panel was opened deliberately. The alert dwell must never
+ *  be able to leave the window in panel shape, and conditioning the return on
+ *  "are we still in the alert shape" trusted a piece of state that was observed
+ *  drifting. This trusts intent instead, which cannot drift. */
+let openedByUser = false;
 
 interface HubStore {
   state: HubState;
@@ -107,6 +112,8 @@ export const useHub = create<HubStore>((set, get) => ({
   },
 
   setShape: async (shape) => {
+    if (shape === "panel") openedByUser = true;
+    if (shape === "island") openedByUser = false;
     // Re-opening mid-collapse must cancel the pending shrink, or the window
     // snaps back to island size while a larger shape is on screen.
     if (shrinkTimer !== undefined) {
@@ -139,7 +146,9 @@ export const useHub = create<HubStore>((set, get) => ({
   },
 
   togglePanel: async () => {
-    await get().setShape(get().shape === "panel" ? "island" : "panel");
+    const next = get().shape === "panel" ? "island" : "panel";
+    openedByUser = next === "panel";
+    await get().setShape(next);
   },
 
   dismissAlert: () => {
@@ -148,7 +157,12 @@ export const useHub = create<HubStore>((set, get) => ({
       alertTimer = undefined;
     }
     set({ alert: null });
-    if (get().shape === "alert") void get().setShape("island");
+    // Unconditional: if the user did not open the panel, the dwell ends at the
+    // island, whatever shape the store currently believes it is in.
+    if (!openedByUser) {
+      set({ shape: "island" });
+      void api.setShape("island");
+    }
   },
 
   fitPanel: (height) => {

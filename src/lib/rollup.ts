@@ -25,6 +25,10 @@ export interface Ask {
   project: Project;
   /** Two words. "Needs a decision" or "Needs review". */
   reason: string;
+  /** What it is actually asking. This is the only field that says anything
+   *  concrete, so it is never omitted: "Cursor needs a decision" on its own
+   *  tells you nothing you can act on. */
+  detail: string;
   /** Raised before today: it has survived a night without being dealt with. */
   stale: boolean;
 }
@@ -68,12 +72,16 @@ export function collectAsks(state: HubState, now = Date.now()): Ask[] {
       if (!project) return null;
       const event = events.find((e) => e.taskId === t.id) ?? null;
       if (event?.dismissed) return null;
+      const summary = event?.summary?.trim();
       return {
         id: t.id,
         task: t,
         event,
         project,
         reason: REASON[t.status] ?? "",
+        // Prefer what the agent actually said; fall back to the task name, and
+        // only then to something generic.
+        detail: summary || t.name.trim() || "No detail reported",
         stale: new Date(t.updatedAt).getTime() < midnight,
       };
     })

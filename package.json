@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Workhub \u2014 always-on-top macOS HUD that aggregates AI workflow status across Cursor, Codex, Figma and Cloud.",
+  "description": "Workhub — always-on-top macOS HUD that aggregates AI workflow status across Cursor, Codex, Figma and Cloud.",
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
@@ -16,6 +16,7 @@
     "@tauri-apps/api": "^2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "simple-icons": "^16.28.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

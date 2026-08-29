@@ -38,7 +38,7 @@ impl Shape {
 /// The island: a pill under the notch. Wide enough for a row of platform marks.
 pub const ISLAND: (f64, f64) = (224.0, 36.0);
 /// The toast: one arrival, readable at a glance.
-pub const ALERT: (f64, f64) = (340.0, 62.0);
+pub const ALERT: (f64, f64) = (340.0, 78.0);
 /// The panel: the queue, or the status board when the queue is empty.
 pub const PANEL: (f64, f64) = (360.0, 420.0);
 
@@ -187,5 +187,41 @@ pub fn set_shape(win: &WebviewWindow, shape: Shape) {
             None => LogicalPosition::new(new_x, y),
         };
         let _ = win.set_position(pos);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The window size and the CSS element size must agree, or the morph shape
+    /// gets clipped by the window. This caught a two-line arrival being cut off
+    /// at 62px while the CSS asked for 78px.
+    #[test]
+    fn shapes_match_the_css() {
+        let css = std::fs::read_to_string(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../src/styles/glass.css"),
+        )
+        .expect("glass.css should sit next to the crate");
+
+        for (selector, (w, h)) in [(".morph.is-island", ISLAND), (".morph.is-alert", ALERT)] {
+            let block = css
+                .split(selector)
+                .nth(1)
+                .and_then(|s| s.split('}').next())
+                .unwrap_or_else(|| panic!("{selector} not found in glass.css"));
+            for (prop, expected) in [("width", w), ("height", h)] {
+                let found = block
+                    .split(&format!("{prop}:"))
+                    .nth(1)
+                    .and_then(|s| s.split("px").next())
+                    .and_then(|s| s.trim().parse::<f64>().ok())
+                    .unwrap_or_else(|| panic!("{selector} has no {prop}"));
+                assert_eq!(
+                    found, expected,
+                    "{selector} {prop}: CSS says {found}, window.rs says {expected}"
+                );
+            }
+        }
     }
 }

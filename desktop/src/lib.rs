@@ -2,6 +2,7 @@
 //! across Cursor, Codex, Figma and Cloud jobs.
 
 mod commands;
+mod frame_anim;
 mod launch;
 mod model;
 mod server;

@@ -1,5 +1,10 @@
 # Workhub
 
+> **Status: paused, 2026-08-29.** Nothing has ever reported to this app. There
+> are no adapters, and the premise that AI tools announce their own state does
+> not hold for most of them (Cursor cannot at all). See
+> [DECISIONS.md](DECISIONS.md) before building on this.
+
 A Dynamic-Island-style HUD for macOS, centred under the notch, that aggregates the
 AI work you have running in parallel across **Cursor, Codex, Figma and Cloud** jobs.
 

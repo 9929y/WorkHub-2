@@ -47,7 +47,7 @@ body {
      and the frost, which is the window, would lag the shape. */
   width: 100%;
   height: 100%;
-  transition: background-color var(--morph) var(--ease);
+  transition: background-color var(--morph-in) var(--ease);
   /* Lensing only, and strictly INSET.
    *
    * An outer drop shadow here painted the ugly dark bands down the left and
@@ -97,25 +97,10 @@ body {
   opacity: 0.5;
 }
 
-/* Content follows the shape rather than arriving with it: the box opens, then
-   the words land. Transform and opacity only, so it stays off the layout path. */
-.morph > * {
-  animation: contents var(--dur-enter) var(--ease-out) both;
-}
-@keyframes contents {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  55% {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Content entrances are per-element (see components.css). There is deliberately
+   no blanket rule here: `.morph > * { animation }` held the whole subtree at
+   opacity 0 for the first 165ms, which silently killed every stagger inside it
+   and landed the content at the frame's peak overshoot. */
 
 .shell {
   display: flex;

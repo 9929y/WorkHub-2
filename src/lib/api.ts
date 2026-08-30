@@ -24,7 +24,16 @@ export const openTarget = (sourceApp: string, url?: string | null) =>
   invoke<void>("open_target", { sourceApp, url: url ?? null });
 
 /** island | alert | panel */
-export const setShape = (shape: string) => invoke<void>("set_shape", { shape });
+const reducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export const setShape = (shape: string, height?: number) =>
+  invoke<void>("set_shape", {
+    shape,
+    height: height ?? null,
+    // Reduced motion has to reach the native frame, not just the CSS.
+    instant: reducedMotion(),
+  });
 
 /** Fit the native window to the panel's measured content height. */
 export const setPanelHeight = (height: number) =>

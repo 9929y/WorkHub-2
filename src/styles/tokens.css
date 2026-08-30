@@ -29,33 +29,36 @@
   --t-body: 12px;
   --t-title: 14px;
 
-  /* --- Glass ----------------------------------------------------------- */
-  /* Glassmorphism spec calls for 15-30% opacity. Measured against an arbitrary
-   * wallpaper that lands at 1.01:1 on the blocked red, so the tint below sits at
-   * the contrast floor instead. Blur does not rescue contrast: it destroys the
-   * wallpaper's detail but preserves its average luminance.
+  /* --- Motion ----------------------------------------------------------
+   * The frame is animated by window::animate_to, NOT by CSS. --gate is the
+   * contract between them: window::spring(t) reaches 0.99 at t = 0.42, so the
+   * window only has full room at 0.42 * MORPH_IN_MS. Content that starts before
+   * that gets clipped by `overflow: hidden` and reads as squeezed out of a slot.
+   * If MORPH_IN_MS changes, --gate = round(MORPH_IN_MS * 0.42).
    *
-   * The glass therefore reads through LENSING, not through transparency:
-   * a specular top edge, a bright rim, and the fluid morph. */
-  --blur: 18px;
-  --sat: 180%;
+   * Overshoot is for entrances only, and for MARKS only. At 10-11px a 6%
+   * positional overshoot on type is a legible wobble, and this is a readout. */
+  --morph-in: 260ms; /* == MORPH_IN_MS in window.rs and store.ts */
+  --gate: 100ms; /* content may start this far into a GROW */
 
-  /* --- Motion ---------------------------------------------------------- */
-  --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --dur-fast: 120ms;
-  /* The morph. A Dynamic Island is defined by its spring, so this curve carries
-   * a small deliberate overshoot; keep it restrained, it is chrome, not a toy.
-   * --morph must stay in sync with MORPH_MS in lib/store.ts. */
-  --morph: 260ms;
-  /* From the motion presets: hover feedback 150-200ms, list stagger 0.02-0.04s
-   * per item, entrances 250-350ms, all on transform/opacity only. */
   --dur-hover: 160ms;
-  --dur-enter: 300ms;
-  --stagger: 34ms;
+  --dur-enter: 190ms;
+  --dur-exit: 110ms; /* ~58% of enter: closing is not narrated */
+  --dur-swap-out: 130ms;
+  --dur-swap-in: 200ms;
+  --stagger: 30ms;
+
+  --lift: 6px; /* vertical entrance travel */
+  --slide: 14px; /* horizontal swap travel */
+  --soften: 2px; /* pre-blur on a swap; always ends at `none` */
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --spring: cubic-bezier(0.34, 1.32, 0.36, 1); /* marks only, never type */
   /* Exit runs at ~65% of enter: closing should feel immediate, not narrated.
    * Must stay in sync with MORPH_OUT_MS in lib/store.ts. */
-  --morph-out: 170ms;
   --spring: cubic-bezier(0.34, 1.32, 0.36, 1);
 
 }
@@ -202,8 +205,6 @@
    transparency, the material becomes opaque and the blur is dropped entirely. */
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --blur: 0px;
-    --sat: 100%;
     --glass-base: rgb(24, 25, 28);
     --island-bg: rgb(22, 23, 26);
     --specular: transparent;

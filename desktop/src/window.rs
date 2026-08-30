@@ -52,8 +52,18 @@ const MARGIN: f64 = 6.0;
 /// 36pt tall, so its pill radius is 18, and everything else matches it.
 pub const RADIUS: f64 = 18.0;
 
-/// How long the native frame animation runs. Matches --morph in tokens.css.
-const MORPH_MS: u64 = 260;
+/// Which frame animation is current. Each `animate_to` claims a generation and
+/// abandons itself the moment a newer one starts.
+///
+/// Without this, two overlapping animations interleave their `set_size` calls
+/// and the window is left stranded at whatever the losing task wrote last:
+/// observed at 306x72, which is not a frame of either animation.
+static ANIM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Frame-animation timings. Must match --morph-in / --morph-out in tokens.css.
+/// Exit is deliberately shorter: closing should not be narrated.
+const MORPH_IN_MS: u64 = 260;
+const MORPH_OUT_MS: u64 = 200;
 const FRAME_MS: u64 = 8;
 
 /// A monitor's work area in logical pixels: `(x, y, width, height)`.
@@ -153,6 +163,9 @@ pub const PANEL_MAX_H: f64 = 520.0;
 /// Resize the expanded panel to the height its content actually needs, so the
 /// window never sits over the desktop as a transparent, click-swallowing slab.
 pub fn set_panel_height(win: &WebviewWindow, height: f64) {
+    // Claim a generation so any animation still in flight stands down rather
+    // than overwriting this size on its next frame.
+    ANIM_GENERATION.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let h = height.clamp(PANEL_MIN_H, PANEL_MAX_H);
     let scale = win.scale_factor().unwrap_or(2.0);
     let before = win
@@ -174,11 +187,19 @@ pub fn set_panel_height(win: &WebviewWindow, height: f64) {
     }
 }
 
-/// Ease-out with a small overshoot, mirroring --spring in tokens.css.
+/// Ease-out with a small overshoot. **Entrances only.**
 fn spring(t: f64) -> f64 {
     let c = 1.70158 * 0.8;
     let t = t - 1.0;
     t * t * ((c + 1.0) * t + c) + 1.0
+}
+
+/// Overshoot-free. Shrinks must use this: `spring` undershoots past the target
+/// on the way down (360 -> 224 dips to 215px), which is narrower than the
+/// island itself and clips its own count badge for ~100ms on every collapse.
+fn settle(t: f64) -> f64 {
+    let t = t - 1.0;
+    1.0 + t * t * t
 }
 
 /// Animate the window frame itself, rather than animating an element inside it.
@@ -215,33 +236,63 @@ pub fn animate_to(win: &WebviewWindow, to_w: f64, to_h: f64) {
         return;
     }
 
+    // Growing gets the spring; shrinking gets the overshoot-free curve, and
+    // gets there faster.
+    let growing = to_w * to_h >= from_w * from_h;
+    let (ms, ease): (u64, fn(f64) -> f64) = if growing {
+        (MORPH_IN_MS, spring)
+    } else {
+        (MORPH_OUT_MS, settle)
+    };
+
+    use std::sync::atomic::Ordering;
+    let generation = ANIM_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+
     let win = win.clone();
     tauri::async_runtime::spawn(async move {
-        let steps = (MORPH_MS / FRAME_MS).max(1);
+        let steps = (ms / FRAME_MS).max(1);
         for i in 1..=steps {
-            let p = spring(i as f64 / steps as f64);
+            // A newer animation has taken over; stop writing frames immediately
+            // so the two do not interleave and strand the window mid-flight.
+            if ANIM_GENERATION.load(Ordering::SeqCst) != generation {
+                return;
+            }
+            let p = ease(i as f64 / steps as f64);
             let w = from_w + (to_w - from_w) * p;
             let h = from_h + (to_h - from_h) * p;
             let _ = win.set_size(LogicalSize::new(w, h));
             let _ = win.set_position(LogicalPosition::new(target_x(w).round(), target_y));
             tokio::time::sleep(std::time::Duration::from_millis(FRAME_MS)).await;
         }
-        // Land exactly on the target; the overshoot must not be where it stops.
-        let _ = win.set_size(LogicalSize::new(to_w, to_h));
-        let _ = win.set_position(LogicalPosition::new(target_x(to_w).round(), target_y));
+        // Land exactly on the target, but only if still the current animation:
+        // the overshoot must never be where it stops.
+        if ANIM_GENERATION.load(Ordering::SeqCst) == generation {
+            let _ = win.set_size(LogicalSize::new(to_w, to_h));
+            let _ = win.set_position(LogicalPosition::new(target_x(to_w).round(), target_y));
+        }
     });
 }
 
 /// Resize to a shape, keeping the **horizontal centre fixed** so everything
 /// unfolds straight down from the island, the way a notch island does.
-pub fn set_shape(win: &WebviewWindow, shape: Shape) {
+/// `height` lets the panel animate straight to its measured content height,
+/// instead of opening at the 420px default and then settling to the real size.
+pub fn set_shape(win: &WebviewWindow, shape: Shape, height: Option<f64>, instant: bool) {
     let (w, h) = shape.size();
-    animate_to(win, w, h);
+    let h = match (shape, height) {
+        (Shape::Panel, Some(px)) => px.clamp(PANEL_MIN_H, PANEL_MAX_H),
+        _ => h,
+    };
+    // A user who asked for less motion was still getting a springing window:
+    // prefers-reduced-motion reached the CSS but never the frame.
+    if instant {
+        set_shape_instant(win, w, h);
+    } else {
+        animate_to(win, w, h);
+    }
 }
 
-#[allow(dead_code)]
-fn set_shape_instant(win: &WebviewWindow, shape: Shape) {
-    let (w, h) = shape.size();
+fn set_shape_instant(win: &WebviewWindow, w: f64, h: f64) {
 
     let scale = win.scale_factor().unwrap_or(2.0);
     let before = win
@@ -307,29 +358,30 @@ mod tests {
     /// down the sides. Depth belongs to the compositor. This regressed twice.
     #[test]
     fn morph_has_no_outer_shadow() {
-        let css = std::fs::read_to_string(
-            concat!(env!("CARGO_MANIFEST_DIR"), "/../src/styles/glass.css"),
-        )
-        .expect("glass.css should sit next to the crate");
-        let morph = css
-            .split(".morph {")
-            .nth(1)
-            .and_then(|s| s.split('}').next())
-            .expect(".morph rule not found");
-        let shadow = morph
-            .split("box-shadow:")
-            .nth(1)
-            .and_then(|s| s.split(';').next())
-            .unwrap_or("");
-        for layer in shadow.split(',') {
-            let layer = layer.trim();
-            if layer.is_empty() {
+        // `.morph` clips its children, so an outer shadow anywhere inside it is
+        // clipped too. Checking only `.morph` let `.island` keep one.
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../src/styles/");
+        for (file, selector) in [("glass.css", ".morph {"), ("components.css", ".island {")] {
+            let css = std::fs::read_to_string(format!("{dir}{file}"))
+                .unwrap_or_else(|_| panic!("{file} should sit next to the crate"));
+            let Some(block) = css.split(selector).nth(1).and_then(|s| s.split('}').next()) else {
                 continue;
+            };
+            let shadow = block
+                .split("box-shadow:")
+                .nth(1)
+                .and_then(|s| s.split(';').next())
+                .unwrap_or("");
+            for layer in shadow.split(',') {
+                let layer = layer.trim();
+                if layer.is_empty() {
+                    continue;
+                }
+                assert!(
+                    layer.starts_with("inset"),
+                    "{selector} has outer shadow layer `{layer}`; it will be clipped by .morph"
+                );
             }
-            assert!(
-                layer.starts_with("inset"),
-                "outer shadow layer `{layer}` on .morph will be clipped by the window edge"
-            );
         }
     }
 

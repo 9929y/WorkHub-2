@@ -5,7 +5,7 @@ import { Island } from "./components/Island";
 import { Panel } from "./components/Panel";
 
 export default function App() {
-  const { shape, loaded, init } = useHub();
+  const { shape, leaving, loaded, init } = useHub();
 
   useEffect(() => {
     let cancelled = false;
@@ -24,7 +24,7 @@ export default function App() {
   // window::animate_to), because NSVisualEffectView is the window: making the
   // frost and the shape the same object is the only way to have both.
   return (
-    <div className={`morph is-${shape}`}>
+    <div className={`morph is-${shape}`} data-leaving={leaving || undefined}>
       {loaded ? shape === "panel" ? <Panel /> : shape === "alert" ? <Arrival /> : <Island /> : null}
     </div>
   );

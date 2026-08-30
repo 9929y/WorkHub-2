@@ -59,9 +59,15 @@ pub fn dismiss(app: AppHandle, state: State<'_, AppState>, event_id: String) -> 
 /// `alert` is the transient toast the island morphs into when an agent reports;
 /// it is not a mode the user can be left in, so it is not persisted.
 #[tauri::command]
-pub fn set_shape(win: WebviewWindow, state: State<'_, AppState>, shape: String) -> CmdResult<()> {
+pub fn set_shape(
+    win: WebviewWindow,
+    state: State<'_, AppState>,
+    shape: String,
+    height: Option<f64>,
+    instant: Option<bool>,
+) -> CmdResult<()> {
     let shape = window::Shape::parse(&shape);
-    window::set_shape(&win, shape);
+    window::set_shape(&win, shape, height, instant.unwrap_or(false));
     if shape == window::Shape::Alert {
         return Ok(());
     }

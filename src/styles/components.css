@@ -45,8 +45,9 @@
   background: var(--island-bg);
   border-radius: var(--r-pill);
   color: var(--island-ink);
-  /* A light pill on a light desktop needs an edge to exist at all. */
-  box-shadow: inset 0 0 0 1px var(--stroke), 0 2px 10px rgba(0, 0, 0, 0.18);
+  /* Inset only: `.morph` clips its children, so an outer shadow here is clipped
+     too. The window's own shadow supplies the depth. */
+  box-shadow: inset 0 0 0 1px var(--stroke);
   transition: transform var(--dur-hover) var(--ease-out);
 }
 .island:hover {
@@ -198,7 +199,7 @@
   height: 100%;
   border-radius: var(--r-pill);
   background: var(--done);
-  transition: width var(--morph) var(--ease);
+  transition: width var(--dur-enter) var(--ease-out);
 }
 
 /* ===== Logos =========================================================== */
@@ -232,25 +233,173 @@
   height: 100%;
   padding: 0 var(--s-3) 0 var(--s-4);
 }
+/* The frame widens 58px per side and deepens 42px from a fixed top edge, so
+   each part travels from where the island's edge was: the logo leftward into
+   place, the count rightward, and the two text lines down into space that did
+   not exist before. Flanks get the spring because they are marks; type never
+   overshoots. All of it starts at --gate, once the frame has room. */
+.arrival-logo,
+.arrival-more {
+  animation: flank-in var(--dur-enter) var(--spring) var(--gate) both;
+}
 .arrival-logo {
+  --from-x: 22px;
   flex: none;
   display: grid;
   place-items: center;
   width: 26px;
   height: 26px;
   color: var(--text-1);
-  animation: logo-land var(--dur-enter) var(--ease-out) 80ms both;
 }
-@keyframes logo-land {
+.arrival-more {
+  --from-x: -22px;
+}
+
+@keyframes flank-in {
   from {
     opacity: 0;
-    transform: scale(0.7);
+    transform: translateX(var(--from-x)) scale(0.72);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
 }
+
+/* Three beats: who is asking, then what they need. The status glyph inside
+   .arrival-top must NOT get its own delay; it is part of a beat, not a beat. */
+.arrival-top {
+  animation: line-in var(--dur-enter) var(--ease-out) calc(var(--gate) + var(--stagger)) both;
+}
+.arrival-detail {
+  animation: line-in var(--dur-enter) var(--ease-out) calc(var(--gate) + var(--stagger) * 2) both;
+}
+
+/* The exit is the entrance run backwards and compressed. Direction of travel is
+   INWARD: entrances expand from the centre, so exits must collapse to it.
+   Reversed, it reads as an explosion. */
+.morph[data-leaving] .arrival-detail {
+  animation: line-out var(--dur-exit) var(--ease-in) 0ms both;
+}
+.morph[data-leaving] .arrival-top {
+  animation: line-out var(--dur-exit) var(--ease-in) 20ms both;
+}
+.morph[data-leaving] .arrival-logo,
+.morph[data-leaving] .arrival-more {
+  animation: flank-out var(--dur-exit) var(--ease-in) 40ms both;
+}
+.morph[data-leaving] .arrival-logo {
+  --to-x: 10px;
+}
+.morph[data-leaving] .arrival-more {
+  --to-x: -10px;
+}
+
+@keyframes line-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+@keyframes flank-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(var(--to-x)) scale(0.82);
+  }
+}
+
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--lift));
+    filter: blur(var(--soften));
+  }
+  55% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+/* The slot holds up to two cards stacked absolutely, so a swap causes zero
+   reflow: only their transforms move. */
+.arrival-slot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+.arrival-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* Newer arrives from the right, older leaves to the left: time runs left to
+   right. The 40ms overlap is deliberate — zero overlap reads as two separate
+   events, a full crossfade reads as a dissolve and loses the direction. */
+.arrival-card[data-phase="in"] {
+  animation: swap-in var(--dur-swap-in) var(--ease-out) 90ms both;
+}
+.arrival-card[data-phase="out"] {
+  animation: swap-out var(--dur-swap-out) var(--ease-in) both;
+  pointer-events: none;
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--slide));
+    filter: blur(var(--soften));
+  }
+  55% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes swap-out {
+  from {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--slide) * -1));
+    filter: blur(var(--soften));
+  }
+}
+
+/* Only when the tool itself changed. Same agent asking twice must not move it. */
+.arrival-logo[data-swapped] {
+  animation: logo-swap 160ms var(--ease-out) 100ms both;
+}
+@keyframes logo-swap {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .arrival-body {
   display: flex;
   flex-direction: column;

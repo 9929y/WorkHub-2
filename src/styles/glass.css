@@ -1,0 +1,225 @@
+/* Base layout and the one glass surface. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  /* The native window is transparent; all paint comes from the app shell. */
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--t-body);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+/* Counters and timestamps. Stops width jitter as numbers change, which on a
+   live readout is very visible. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The morphing element. There is exactly one, and it is the whole UI.
+ *
+ * Width/height are animated here, which is normally the wrong thing to animate.
+ * It is correct in this one case: the element has no siblings and no layout
+ * around it, so there is nothing to reflow, and a transform-based fake would
+ * distort the content instead of reflowing it. */
+.morph {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-shape);
+  overflow: hidden;
+  /* The element fills the window; the WINDOW is what animates (see
+     window::animate_to in Rust). Animating size here as well would fight it,
+     and the frost, which is the window, would lag the shape. */
+  width: 100%;
+  height: 100%;
+  transition: background-color var(--morph-in) var(--ease);
+  /* Lensing only, and strictly INSET.
+   *
+   * An outer drop shadow here painted the ugly dark bands down the left and
+   * right: this element fills the window exactly, so an outer shadow lands
+   * outside the window and gets clipped against its edge. Depth is the
+   * compositor's job now (`shadow: true`), because macOS knows the window's
+   * real rounded shape and can draw a correct shadow around it. */
+  box-shadow:
+    inset 0 1px 0 0 var(--rim-top),
+    inset 0 0 0 1px var(--stroke),
+    inset 0 -1px 0 0 var(--rim-bottom);
+}
+
+/* Collapsed: an opaque black pill standing in for the notch. Not themed, not
+   glass: the notch is black in light mode too. */
+/* A transition uses the duration of the state it is moving TO, so putting the
+   shorter duration here is what makes collapsing quicker than expanding. */
+/* One radius for every shape: NSVisualEffectView is rounded once at the window
+   level, so the frost cannot have a different corner from the shape on top. */
+.morph.is-island {
+  background: var(--island-bg);
+}
+
+/* Expanded: a themed, translucent panel. */
+/* The arrival: an island stretched just far enough to be read. */
+.morph.is-alert {
+  background: var(--island-bg);
+}
+
+.morph.is-panel {
+  background: var(--glass-base);
+}
+
+/* Lensing. A rim that is bright on top and dark below, plus a specular
+   highlight along the top edge: the way light actually behaves at the edge of a
+   piece of glass. This carries the material, because the tint cannot. */
+/* The specular sits in the top 8px only, above every line of text.
+   A wash over the content area measured 2.97:1 on the blocked red in dark mode:
+   lensing concentrates at the edge in the real world, and it has to here too. */
+.morph::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--specular), transparent);
+  opacity: 0.5;
+}
+
+/* Content entrances are per-element (see components.css). There is deliberately
+   no blanket rule here: `.morph > * { animation }` held the whole subtree at
+   opacity 0 for the first 165ms, which silently killed every stagger inside it
+   and landed the content at the frame's peak overshoot. */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.scroll::-webkit-scrollbar {
+  width: 7px;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--stroke-strong);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Focus rings stay visible, only scoped to keyboard use. */
+:focus-visible {
+  outline: 2px solid var(--running);
+  outline-offset: 1px;
+  border-radius: var(--r-chip);
+}
+
+/* Icon-only affordances. The only "button" left with a hit area of its own. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-chip);
+  color: var(--text-2);
+  font-size: var(--t-label);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.btn:hover {
+  background: var(--glass-hover);
+  color: var(--text-1);
+}
+.btn:active {
+  background: var(--glass-active);
+}
+.btn.icon {
+  width: 20px;
+  padding: 0;
+  justify-content: center;
+}
+/* Present but unobtrusive until pointed at. */
+.btn.quiet {
+  color: var(--text-3);
+}
+.btn.quiet:hover {
+  color: var(--text-1);
+}
+
+/* Text actions. Quieter than a button, which is all an alert needs. */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--t-label);
+  color: var(--text-2);
+  text-decoration: none;
+  border-radius: 3px;
+  transition: color var(--dur-fast) var(--ease);
+}
+.link:hover {
+  color: var(--text-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The only draggable zone. Deliberately small: a full-surface drag region
+   swallows the clicks that expand the panel. */
+.grip {
+  flex: none;
+  width: 13px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  color: var(--text-3);
+  border-radius: var(--r-chip);
+  transition: color var(--dur-fast) var(--ease);
+}
+.grip:hover {
+  color: var(--text-2);
+}
+.grip:active {
+  cursor: grabbing;
+}

@@ -1,20 +1,90 @@
 # Workhub
 
-An always-on-top frosted-glass HUD for macOS that aggregates the AI work you have
-running in parallel across **Cursor, Codex, Figma and Cloud** jobs.
+> **Status: paused, 2026-08-29.** Nothing has ever reported to this app. There
+> are no adapters, and the premise that AI tools announce their own state does
+> not hold for most of them (Cursor cannot at all). See
+> [DECISIONS.md](DECISIONS.md) before building on this.
 
-It is not a todo app. Nothing is maintained by hand: agents POST events to a local
-HTTP endpoint, Workhub groups them by project, rolls up status across tools, and
-holds notifications until you explicitly dismiss them.
+A Dynamic-Island-style HUD for macOS, centred under the notch, that aggregates the
+AI work you have running in parallel across **Cursor, Codex, Figma and Cloud** jobs.
+
+It is not a todo app, and it is not a notification log. Collapsed, it carries **no
+prose at all**: one mark per platform, tinted by what that platform needs, plus a
+count. Click and it springs open into the only thing worth reading — what is waiting
+on *you*.
+
+### The one rule
+
+**Workhub does not display state. It catches the moment state changes into "needs a
+human".** A level ("Codex is running") never changes what you do in the next ten
+seconds; an edge ("Codex just stopped and needs you") is the entire product.
+
+Status is about who has the ball:
+
+| status | who has the ball | shown as |
+|---|---|---|
+| `running` | the machine | a mark. Never words. |
+| `done` | nobody | fills the board. Never words. |
+| `blocked` | **you** | an **Ask**: needs a decision |
+| `waiting` | **you** | an **Ask**: needs review |
+
+Only the bottom two ever produce a line of prose.
+
+### Three shapes
+
+| shape | size | when |
+|---|---|---|
+| **island** | 224×36 | resting. Platform marks and a count. No prose at all. |
+| **arrival** | 340×62 | an agent just raised an Ask. Six seconds, then it demotes itself. |
+| **panel** | 360×auto | you clicked. |
+
+The arrival never blocks: the Ask is already in the queue before it appears, so
+ignoring it costs nothing.
+
+### The panel has two forms
+
+This is what resolves "I want progress and platforms" against "it is too heavy":
+
+- **Asks pending → the panel is a queue, and nothing else.** You are acting.
+- **Queue empty → the panel is the status board**: progress, who is working. You are
+  browsing, so levels finally earn their place.
+
+### How an Ask settles
+
+Three ways, and two of them need nothing from you:
+
+1. **Answered** — an agent reports progress on the same task, and the Ask leaves the
+   queue by itself. This is the normal path.
+2. **Overnight** — an Ask raised before today drops below an *Earlier* divider. It is
+   marked by **position, not by fading**: dimming these rows measured 2.3:1 in light
+   mode, and the tertiary text ramp has no headroom to give.
+3. **Dismissed** — the escape hatch for work you handled outside Workhub.
 
 ```
-┌─ collapsed (320×96) ────────────────┐
-│ ⠿ Workhub               ▣ 2    ⌄   │
-│ ● Brainstorm IA          6m ago    │
-│   Portfolio Rewrite                │
-│ 2 active │ ● 2 running │ ● 1 blocked│
-└─────────────────────────────────────┘
-        click → status panel (420×620)
+        ▁▁▁▁▁▁▁▁         ← the notch
+ ╭────────────────────────╮
+ │  ➤  >_  ◐  ☁       ②  │  ← the island: one mark per platform, no words
+ ╰────────────────────────╯
+            ↓ click
+ ╭────────────────────────╮
+ │ 2 need you          ⌃  │
+ │ AtlasNova Brand Kit    │
+ │              ▰▱▱ 1/3 done│
+ │  >_ Codex  ➤ Cursor    │
+ │  ✕ Cursor  Debug tokens│
+ │  ○ Figma   Design review│
+ │ History  2          ⌄  │
+ ╰────────────────────────╯
+
+Marks are the products' **own logos**, from `simple-icons`, rendered monochrome in the
+current text colour. Brand colour is unusable here: Cursor's is `#000000` and GitHub's
+is `#181717`, both invisible on a dark panel, so recognition comes from the shape.
+OpenAI is the exception: that mark was withdrawn from `simple-icons` at OpenAI's
+request, so Codex falls back to a lettermark rather than an invented logo.
+
+**Every Ask says what it is about.** Which platform, which project, and the agent's own
+summary. "Cursor needs a decision" on its own is not actionable, and an earlier version
+shipped exactly that.
 ```
 
 ---
@@ -113,7 +183,6 @@ Project  { id, name, slug, createdAt, updatedAt }
 Task     { id, projectId, name, sourceApp, status, updatedAt }
 Event    { id, projectId, taskId, sourceApp, taskName, status,
            summary, priority, url, timestamp, read, dismissed }
-Note     { id, projectId, sourceApp, text, timestamp, pinned }
 ```
 
 **`Task` is the "thread" concept and it is what makes aggregation work.** A task is
@@ -136,7 +205,8 @@ nowhere else:
 
 - **unread** — `!read && !dismissed`
 - **sticky alert** — `!dismissed && (blocked || done || priority === high)`.
-  Sticky alerts **never auto-expire**; only pressing *Dismiss* removes one.
+  Sticky alerts **never auto-expire**; only pressing *Dismiss* removes one. An alert
+  you have read collapses to a single line but stays until dismissed.
 - **project status** — worst status among its tasks: `blocked > waiting > running > done`
 - **active projects** — projects with at least one `running` or `waiting` track
 
@@ -185,14 +255,20 @@ These are real MVP constraints, not TODOs I forgot:
    only way to quit**.
 5. **The release build is unsigned.** On first open macOS Gatekeeper will object;
    right-click → Open, or sign it with your own certificate.
-6. **Dark only.** The HUD floats over arbitrary wallpaper; a light variant would lose
-   contrast against bright desktops. Type is 10–13 px by design — this is a dense
-   status console, not a document.
-7. **`pnpm build` occasionally fails on its first attempt** with
+6. **Light and dark follow the macOS system appearance**, with no control in the UI.
+   The island and the panel share one surface: an island that stayed black while the
+   panel went light read as two different apps. Type is 10–14 px by design.
+7. **The island sits below the menu bar, not over the notch.** Drawing above the menu
+   bar needs a status-level window and would cover the very thing the notch lives in.
+8. **No native vibrancy.** `NSVisualEffectView` fills the *window*, but the island
+   morphs an *element* inside it, so a frosted rectangle would flash around the pill on
+   every collapse. CSS owns the surface instead, at 93–95% opacity, with
+   `backdrop-filter` as pure enhancement.
+9. **`pnpm build` occasionally fails on its first attempt** with
    ``beforeBuildCommand `pnpm vite:build` failed``, when another pnpm or cargo
    process has just finished. `pnpm vite:build` always succeeds on its own, and the
    retry produces an identical bundle. Just run it again.
-8. **pnpm blocks esbuild's install script** on this machine (build scripts are gated
+10. **pnpm blocks esbuild's install script** on this machine (build scripts are gated
    by default in pnpm 11). It does not matter: esbuild's native binary ships inside
    `@esbuild/darwin-arm64` and vite resolves it directly. `pnpm-workspace.yaml` sets
    `verifyDepsBeforeRun: false` so the pending approval does not abort `pnpm run`.
@@ -210,8 +286,8 @@ workhub/
 │   │   ├── rollup.ts         ALL derived values live here
 │   │   ├── store.ts          zustand + live event subscription
 │   │   └── api.ts            the only file that calls invoke()
-│   ├── components/           Widget, Panel, ProjectCard, Timeline,
-│   │                         StickyAlerts, Notes, SourceBadge, StatusDot
+│   ├── components/           Island, Panel, ProjectRow,
+│   │                         PlatformIcon, StatusDot, Icons
 │   └── styles/
 │       ├── tokens.css        colour / space / radius / type — single source of truth
 │       ├── glass.css         layout + glass surface recipes
@@ -236,14 +312,63 @@ All colour, spacing, radius and type live in
 | | |
 |---|---|
 | Surfaces | `rgba(22,23,26,0.62)` base · `rgba(38,40,45,0.55)` raised — tint only, blur is native |
-| Text | three levels: 0.94 / 0.62 / 0.40 alpha |
+| Text | three levels per theme; every pair measured, see below |
 | Status | running `#4A9EFF` · done `#35C17E` · blocked `#FF5F56` · waiting `#F0A83C` |
-| Radii | 12 px window · 10 px card · 8 px chip |
-| Motion | 120–180 ms, honours `prefers-reduced-motion` |
+| Radii | pill island · 22–24 px panel · 8 px chip. There are no cards. |
+| Glass | blur 18px + saturate 180%, with the highlight at the **edge**, not over content |
+| Motion | 120 ms, honours `prefers-reduced-motion` |
 
-Status is never conveyed by colour alone — every dot carries an accessible label,
-unread alerts get a left rule as well as a colour, and all counters use tabular
-figures so numbers do not jitter as they change.
+**Status is carried by shape first, hue second.** The palette spans the red/green
+pair, so hue alone would collapse under deuteranopia. Each status has its own glyph:
+
+| Status | Glyph |
+|---|---|
+| running | filled disc (the only thing that animates) |
+| done | check |
+| blocked | cross |
+| waiting | hollow ring |
+
+The result stays readable in greyscale, and every glyph exposes a text label to
+assistive tech. All counters use tabular figures so numbers do not jitter.
+
+Text alphas are solved, not chosen by eye. Each theme is measured against its own
+worst-case wallpaper (white behind dark mode, black behind light mode), because a
+translucent panel's background depends on what is behind it:
+
+| | dark | light |
+|---|---|---|
+| tint opacity | 0.62 | **0.76** |
+| secondary text | 0.66 → 6.2:1 | 0.62 → 5.8:1 |
+| tertiary text | 0.52 → 4.8:1 | 0.58 → 5.0:1 |
+
+Light mode is not the dark palette inverted: it needs a more opaque tint, because dark
+text over a light translucent panel loses contrast far faster as the wallpaper darkens,
+and darker status hues, because the dark-mode hues fail outright on a light surface.
+
+**The frost is native, not CSS.** `backdrop-filter` cannot do this job: in a
+transparent window it samples only the layers beneath it *inside the web content*,
+and macOS does not composite the desktop into the webview's backdrop, so it produced
+exactly zero blur. `NSVisualEffectView` (`Popover`, a semantic material that follows
+the system appearance) is the only thing that frosts the desktop.
+
+It fills the **window**, which is why the morph animates the window frame itself
+(`window::animate_to`) rather than an element inside it. Making the frost and the shape
+the same object is the only way to have both. Everything shares one corner radius for
+the same reason, pinned by a test.
+
+Because the material does the frosting, the tint only has to carry contrast, so it
+drops to **0.50 dark / 0.60 light** and the glass is genuinely translucent.
+
+**Why not 15% opaque.** Glassmorphism's spec calls for 15–30%. Measured
+over an arbitrary wallpaper that puts the blocked red at **1.01:1**, and blur does not
+rescue it: blur destroys the wallpaper's detail but preserves its average luminance. The
+AA floor is a tint of 0.89 (dark) and 0.93 (light), so the material reads through
+**lensing** instead — a bright rim, a dark lower edge, a specular highlight in the top
+8px, and the morph. A specular *wash* over the content area was tried and measured
+2.97:1 on the blocked red; real lensing concentrates at the edge anyway.
+
+`prefers-reduced-transparency` drops the blur and goes fully opaque, as Liquid Glass's
+own checklist requires.
 
 ---
 

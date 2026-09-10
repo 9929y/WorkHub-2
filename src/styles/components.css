@@ -1,0 +1,662 @@
+/* Component styles. Colour, spacing and type come from tokens.css only. */
+
+/* ===== Status ========================================================== */
+/* Shape first, hue second, so status survives greyscale and the red/green
+   colour-vision pair. Shapes live in StatusDot.tsx. */
+.glyph {
+  flex: none;
+  display: block;
+}
+.glyph-running {
+  color: var(--running);
+  animation: pulse 2s var(--ease) infinite;
+}
+.glyph-done {
+  color: var(--done);
+}
+.glyph-blocked {
+  color: var(--blocked);
+}
+.glyph-waiting {
+  color: var(--waiting);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+/* ===== The island (collapsed, 224x36) ================================== */
+/* Opaque near-black, full pill: it reads as an extension of the notch, which is
+   why it does NOT follow the light/dark theme. */
+.island {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--s-3) 0 var(--s-4);
+  background: var(--island-bg);
+  border-radius: var(--r-pill);
+  color: var(--island-ink);
+  /* Inset only: `.morph` clips its children, so an outer shadow here is clipped
+     too. The window's own shadow supplies the depth. */
+  box-shadow: inset 0 0 0 1px var(--stroke);
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+.island:hover {
+  /* Under 2px, so it reads as feedback rather than motion. */
+  transform: translateY(1px);
+}
+.island:active {
+  transform: scale(0.975);
+}
+
+/* A thin drag strip down the left edge. The rest of the island stays clickable,
+   which a full-surface drag region would prevent. */
+.island-grip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14px;
+  border-radius: var(--r-pill) 0 0 var(--r-pill);
+  cursor: grab;
+}
+.island-grip:active {
+  cursor: grabbing;
+}
+
+.island-marks {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 1;
+  min-width: 0;
+}
+/* One mark per platform, tinted by what that platform needs. No words. */
+.mark {
+  display: block;
+  flex: none;
+}
+.mark-running {
+  color: var(--running);
+  animation: pulse 2s var(--ease) infinite;
+}
+.mark-done {
+  color: var(--done);
+}
+.mark-blocked {
+  color: var(--blocked);
+}
+.mark-waiting {
+  color: var(--waiting);
+}
+
+.island-idle,
+.island-dead {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--island-ink-2);
+}
+.island-dead {
+  background: var(--blocked);
+}
+
+/* The only number on the island. Neutral, never a status colour. */
+.island-count {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--unread);
+  color: var(--unread-ink);
+  font-size: var(--t-label);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ===== The panel (expanded) ============================================ */
+.panel-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+  height: 34px;
+  padding: 0 var(--s-2) 0 var(--s-3);
+  border-bottom: 1px solid var(--stroke);
+}
+.panel-grip {
+  position: absolute;
+  inset: 0 34px 0 0;
+  cursor: grab;
+}
+.panel-grip:active {
+  cursor: grabbing;
+}
+.panel-title {
+  flex: 1;
+  font-size: var(--t-title);
+  font-weight: 590;
+  letter-spacing: -0.01em;
+  color: var(--text-2);
+  pointer-events: none;
+}
+.panel-sub {
+  font-size: var(--t-label);
+  font-weight: 400;
+  color: var(--text-3);
+}
+.strong {
+  font-weight: 700;
+  color: var(--text-1);
+}
+.panel-scroll {
+  padding: var(--s-1) 0;
+}
+
+.banner {
+  flex: none;
+  margin: 0;
+  padding: 5px var(--s-3);
+  font-size: var(--t-label);
+  color: var(--blocked);
+  border-bottom: 1px solid var(--stroke);
+}
+.empty {
+  margin: var(--s-4) var(--s-3);
+  font-size: var(--t-label);
+  line-height: 1.6;
+  color: var(--text-3);
+  text-align: center;
+}
+.empty code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  user-select: text;
+}
+
+/* Stage: how many of a category's platforms have finished. Board only. */
+.progress {
+  flex: none;
+  width: 40px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--stroke-strong);
+  overflow: hidden;
+}
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--done);
+  transition: width var(--dur-enter) var(--ease-out);
+}
+
+/* ===== Logos =========================================================== */
+/* Official marks from simple-icons, rendered monochrome in the current text
+   colour. Brand colour is unusable here: Cursor's is #000000 and GitHub's is
+   #181717, both invisible on the dark panel. */
+.logo {
+  display: block;
+  flex: none;
+}
+/* No official mark available (OpenAI's was withdrawn from simple-icons), so a
+   lettermark rather than an invented logo. Two letters, because Cursor and
+   Codex share a first. */
+.logo-text {
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1px solid var(--stroke-strong);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+}
+
+/* ===== The arrival ===================================================== */
+/* Six seconds, then it demotes itself to a number. Nothing here is a decision
+   point: the Ask is already in the queue before this appears. */
+.arrival {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 100%;
+  padding: 0 var(--s-3) 0 var(--s-4);
+}
+/* The frame widens 58px per side and deepens 42px from a fixed top edge, so
+   each part travels from where the island's edge was: the logo leftward into
+   place, the count rightward, and the two text lines down into space that did
+   not exist before. Flanks get the spring because they are marks; type never
+   overshoots. All of it starts at --gate, once the frame has room. */
+.arrival-logo,
+.arrival-more {
+  animation: flank-in var(--dur-enter) var(--spring) var(--gate) both;
+}
+.arrival-logo {
+  --from-x: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text-1);
+}
+.arrival-more {
+  --from-x: -22px;
+}
+
+@keyframes flank-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--from-x)) scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Three beats: who is asking, then what they need. The status glyph inside
+   .arrival-top must NOT get its own delay; it is part of a beat, not a beat. */
+.arrival-top {
+  animation: line-in var(--dur-enter) var(--ease-out) calc(var(--gate) + var(--stagger)) both;
+}
+.arrival-detail {
+  animation: line-in var(--dur-enter) var(--ease-out) calc(var(--gate) + var(--stagger) * 2) both;
+}
+
+/* The exit is the entrance run backwards and compressed. Direction of travel is
+   INWARD: entrances expand from the centre, so exits must collapse to it.
+   Reversed, it reads as an explosion. */
+.morph[data-leaving] .arrival-detail {
+  animation: line-out var(--dur-exit) var(--ease-in) 0ms both;
+}
+.morph[data-leaving] .arrival-top {
+  animation: line-out var(--dur-exit) var(--ease-in) 20ms both;
+}
+.morph[data-leaving] .arrival-logo,
+.morph[data-leaving] .arrival-more {
+  animation: flank-out var(--dur-exit) var(--ease-in) 40ms both;
+}
+.morph[data-leaving] .arrival-logo {
+  --to-x: 10px;
+}
+.morph[data-leaving] .arrival-more {
+  --to-x: -10px;
+}
+
+@keyframes line-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+@keyframes flank-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(var(--to-x)) scale(0.82);
+  }
+}
+
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--lift));
+    filter: blur(var(--soften));
+  }
+  55% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+/* The slot holds up to two cards stacked absolutely, so a swap causes zero
+   reflow: only their transforms move. */
+.arrival-slot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+.arrival-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* Newer arrives from the right, older leaves to the left: time runs left to
+   right. The 40ms overlap is deliberate — zero overlap reads as two separate
+   events, a full crossfade reads as a dissolve and loses the direction. */
+.arrival-card[data-phase="in"] {
+  animation: swap-in var(--dur-swap-in) var(--ease-out) 90ms both;
+}
+.arrival-card[data-phase="out"] {
+  animation: swap-out var(--dur-swap-out) var(--ease-in) both;
+  pointer-events: none;
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--slide));
+    filter: blur(var(--soften));
+  }
+  55% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes swap-out {
+  from {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--slide) * -1));
+    filter: blur(var(--soften));
+  }
+}
+
+/* Only when the tool itself changed. Same agent asking twice must not move it. */
+.arrival-logo[data-swapped] {
+  animation: logo-swap 160ms var(--ease-out) 100ms both;
+}
+@keyframes logo-swap {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.arrival-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.arrival-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.arrival-app {
+  font-size: var(--t-label);
+  font-weight: 680;
+  color: var(--text-1);
+}
+.arrival-sep,
+.ask-sep {
+  flex: none;
+  color: var(--text-3);
+}
+.arrival-project {
+  font-size: var(--t-label);
+  color: var(--text-2);
+}
+/* What it is actually asking. Two lines, because one is rarely enough, and
+   this is the only field that carries meaning. */
+.arrival-detail {
+  font-size: var(--t-label);
+  line-height: 1.35;
+  color: var(--text-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.arrival-body:hover .arrival-app {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.arrival-more {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--unread);
+  color: var(--unread-ink);
+  font-size: var(--t-label);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.arrival-more:hover {
+  opacity: 0.78;
+}
+
+/* ===== The queue ======================================================= */
+.queue {
+  margin: 0;
+  padding: var(--s-1) var(--s-2) var(--s-2);
+  list-style: none;
+}
+.ask {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-1) var(--s-2) var(--s-2);
+  border-radius: var(--r-chip);
+}
+.ask + .ask {
+  margin-top: 2px;
+}
+.ask:hover {
+  background: var(--glass-hover);
+}
+/* Sat overnight. Marked by where it sits, never by fading: dimming measured
+   2.3:1 in light mode, and --text-2 has no headroom to give. */
+.queue-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-2) 0 var(--s-1);
+  padding: 0 var(--s-2);
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.queue-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--stroke);
+}
+.ask-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.ask-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 17px;
+  color: var(--text-2);
+}
+.ask-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.ask-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.ask-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+/* The line that says what it is about. */
+.ask-detail {
+  font-size: var(--t-label);
+  line-height: 1.35;
+  color: var(--text-2);
+}
+.ask-app {
+  flex: none;
+  font-size: var(--t-label);
+  font-weight: 650;
+  color: var(--text-1);
+}
+.ask-main:hover .ask-app {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ask-project {
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+.ask-age {
+  flex: none;
+  margin-left: auto;
+  padding-left: var(--s-2);
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+
+/* ===== The board (only when the queue is empty) ======================== */
+.board {
+  padding: var(--s-2) var(--s-3) var(--s-3);
+}
+.board-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 5px 0;
+}
+.board-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-label);
+  color: var(--text-1);
+}
+.board-marks {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+.board-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.board-mark:hover {
+  background: var(--glass-hover);
+}
+.board-done {
+  margin: var(--s-2) 0 0;
+  font-size: var(--t-micro);
+  color: var(--text-3);
+}
+
+/* ===== Motion ========================================================== */
+/* Queue rows land in sequence. 34ms apart and capped at eight, because past
+   that the list stops reading as one gesture and starts feeling slow. */
+.ask,
+.queue-divider,
+.board-row {
+  animation: row-in var(--dur-enter) var(--ease-out) both;
+}
+.ask:nth-child(1) { animation-delay: 0ms; }
+.ask:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.ask:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.ask:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.ask:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.ask:nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+.ask:nth-child(7) { animation-delay: calc(var(--stagger) * 6); }
+.ask:nth-child(n + 8) { animation-delay: calc(var(--stagger) * 7); }
+.board-row:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.board-row:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.board-row:nth-child(n + 4) { animation-delay: calc(var(--stagger) * 3); }
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Row hover: colour and a hair of travel, never a layout property. */
+.ask,
+.board-row {
+  transition:
+    background var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+.ask:hover {
+  transform: translateX(1px);
+}
+
+/* The progress bar fills rather than jumps. */
+.progress-fill {
+  transition: width var(--dur-enter) var(--ease-out);
+}
+
+/* The count reacts when it changes, so a new arrival is visible even if the
+   toast was missed. */
+.island-count,
+.arrival-more {
+  animation: count-pop var(--dur-hover) var(--ease-out) both;
+}
+@keyframes count-pop {
+  from {
+    transform: scale(0.72);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Every one of the above is transform/opacity only, and all of it is switched
+   off by the reduced-motion block in tokens.css. */

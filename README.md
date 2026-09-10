@@ -60,7 +60,7 @@ Produces `desktop/target/release/bundle/macos/Workhub.app` (unsigned — see Lim
 With the app running:
 
 ```bash
-curl -X POST http://localhost:8787/events -H "Content-Type: application/json" -d '{"project":"AtlasNova","sourceApp":"Codex","taskName":"Implementation","status":"done","summary":"Task finished.","priority":"normal"}'
+curl -X POST http://localhost:8787/events -H "Content-Type: application/json" -d '{"project":"Portfolio Rewrite","sourceApp":"Codex","taskName":"Implementation","status":"done","summary":"Task finished.","priority":"normal"}'
 ```
 
 The HUD updates immediately — no reload, no polling. Post a second event with
@@ -278,3 +278,7 @@ renders with a neutral (dashed) badge instead of a known one. Add it to
 macOS Notification Center listening, a browser-extension bridge, and polling
 adapters that reach into Figma/Cursor APIs directly. The local event bus is the
 foundation those would all sit on; it works and is worth living with first.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).
